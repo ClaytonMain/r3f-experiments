@@ -1,12 +1,13 @@
-import { OrbitControls, Stats } from "@react-three/drei";
+import { OrbitControls, Plane, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import * as THREE from "three";
 import "./App.css";
-import CurlFlowInstancedMesh from "./components/CurlFlowInstancedMesh";
+import VoxelInstancedMesh from "./components/VoxelInstancedMesh";
+import { voxelsPerAxis } from "./voxelConsts";
 
 function App() {
-    const bgColorLinear = new THREE.Color("#222311").convertSRGBToLinear();
+    const bgColorLinear = new THREE.Color("#a4e897").convertSRGBToLinear();
 
     return (
         <>
@@ -18,31 +19,37 @@ function App() {
                 shadows
                 camera={{
                     fov: 45,
-                    near: 10,
-                    far: 3000,
-                    position: new THREE.Vector3(-300, 60, -300)
-                        .normalize()
-                        .multiplyScalar(320),
+                    near: 0.1,
+                    far: 200,
+                    position: new THREE.Vector3(
+                        voxelsPerAxis * 1.5,
+                        voxelsPerAxis * 1.5,
+                        voxelsPerAxis * 1.5
+                    ),
                 }}
             >
                 <Suspense fallback={null}>
-                    <OrbitControls />
-                    <CurlFlowInstancedMesh />
-                    <mesh
-                        rotation-x={-Math.PI / 2}
-                        position-y={-40}
+                    <OrbitControls
+                        autoRotate
+                        autoRotateSpeed={0.5}
+                    />
+                    <Plane
+                        args={[100, 100]}
+                        position={[0, -16, 0]}
+                        rotation={[-Math.PI / 2, 0, 0]}
                         receiveShadow
                     >
-                        <planeGeometry args={[3000, 3000]} />
                         <meshStandardMaterial
-                            roughness={1}
-                            metalness={0}
-                            color={bgColorLinear}
+                            attach="material"
+                            color={"#a4e897"}
+                            metalness={0.6}
+                            roughness={0.8}
                         />
-                    </mesh>
+                    </Plane>
+                    <VoxelInstancedMesh />
                     <ambientLight
                         color={"#fff"}
-                        intensity={0.15}
+                        intensity={0.5}
                     />
                     <directionalLight
                         color={"#fff"}
@@ -50,14 +57,12 @@ function App() {
                         castShadow
                         shadow-mapSize={[2048, 2048]}
                         shadow-camera-near={1}
-                        shadow-camera-far={800}
-                        shadow-camera-left={-250}
-                        shadow-camera-right={250}
-                        shadow-camera-top={250}
-                        shadow-camera-bottom={-250}
-                        position={new THREE.Vector3(-3, 2, -0.35)
-                            .normalize()
-                            .multiplyScalar(200)}
+                        shadow-camera-far={100}
+                        shadow-camera-left={-50}
+                        shadow-camera-right={50}
+                        shadow-camera-top={50}
+                        shadow-camera-bottom={-50}
+                        position={new THREE.Vector3(10, 30, 20)}
                     />
                     <fog
                         attach="fog"

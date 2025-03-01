@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { numParticles, textureHeight, textureWidth } from "../consts";
-import useGPGPU from "../useGPGPU";
+import useGPGPUCurlFlowInstancedMesh from "../useGPGPUCurlFlowInstancedMesh";
 
 const particleUniforms = {
     uTexturePosition: { value: new THREE.Texture() },
@@ -15,8 +15,8 @@ const particleUniforms = {
 };
 
 export default function CurlFlowInstancedMesh() {
-    const { texturePosition, textureVelocity } = useGPGPU();
-    console.log(texturePosition, textureVelocity);
+    const { texturePosition, textureVelocity } =
+        useGPGPUCurlFlowInstancedMesh();
 
     const particlesGeometry = useMemo(() => {
         const geometry = new THREE.OctahedronGeometry();
@@ -102,23 +102,23 @@ export default function CurlFlowInstancedMesh() {
                             attribute vec2 aReference;
             
                             mat3 getRotation(vec3 velocity) {
-                            velocity = normalize(velocity);
-                            velocity.z *= -1.;
-            
-                            float xz = length(velocity.xz);
-                            float xyz = 1.;
-                            float x = sqrt(1. - velocity.y * velocity.y);
-            
-                            float cosry = velocity.x / xz;
-                            float sinry = velocity.z / xz;
-            
-                            float cosrz = x / xyz;
-                            float sinrz = velocity.y / xyz;
-            
-                            mat3 maty = mat3(cosry, 0, -sinry, 0, 1, 0, sinry, 0, cosry);
-                            mat3 matz = mat3(cosrz, sinrz, 0, -sinrz, cosrz, 0, 0, 0, 1);
-            
-                            return maty * matz;
+                                velocity = normalize(velocity);
+                                velocity.z *= -1.;
+                
+                                float xz = length(velocity.xz);
+                                float xyz = 1.;
+                                float x = sqrt(1. - velocity.y * velocity.y);
+                
+                                float cosry = velocity.x / xz;
+                                float sinry = velocity.z / xz;
+                
+                                float cosrz = x / xyz;
+                                float sinrz = velocity.y / xyz;
+                
+                                mat3 maty = mat3(cosry, 0, -sinry, 0, 1, 0, sinry, 0, cosry);
+                                mat3 matz = mat3(cosrz, sinrz, 0, -sinrz, cosrz, 0, 0, 0, 1);
+                
+                                return maty * matz;
                             }`
                         );
                         shader.vertexShader = shader.vertexShader.replace(

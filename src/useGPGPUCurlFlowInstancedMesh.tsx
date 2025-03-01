@@ -8,10 +8,10 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 import { numParticles, textureHeight, textureWidth } from "./consts";
-import particlesPositionShader from "./shaders/gpgpu/position.glsl";
-import particlesVelocityShader from "./shaders/gpgpu/velocity.glsl";
+import particlesPositionShader from "./shaders/gpgpuCurlFlow/position.glsl";
+import particlesVelocityShader from "./shaders/gpgpuCurlFlow/velocity.glsl";
 
-export default function useGPGPU() {
+export default function useGPGPUCurlFlowInstancedMesh() {
     const gl = useThree((state) => state.gl);
 
     const texturePositionRef = useRef<THREE.Texture>();
