@@ -7,16 +7,16 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
-import voxelsSizeShader from "./shaders/gpgpuVoxel/size.glsl";
 import {
     numVoxels,
     textureHeight,
     textureWidth,
     voxelSize,
     voxelsPerAxis,
-} from "./voxelConsts";
+} from "./consts";
+import voxelsSizeShader from "./shaders/gpgpu/size.glsl";
 
-export default function useGPGPUVoxelInstancedMesh() {
+export default function useGPUFlowFieldInstancedMesh() {
     const gl = useThree((state) => state.gl);
 
     const textureSizeRef = useRef<THREE.Texture>();

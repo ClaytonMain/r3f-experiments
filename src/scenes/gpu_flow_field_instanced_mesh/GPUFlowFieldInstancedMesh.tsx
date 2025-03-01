@@ -7,17 +7,14 @@ import { Plane } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import CustomShaderMaterial from "three-custom-shader-material";
-import voxelSizeFragmentShader from "../shaders/voxelSize/voxelSize.frag";
-import voxelSizeVertexShader from "../shaders/voxelSize/voxelSize.vert?raw";
-import useGPGPUVoxelInstancedMesh from "../useGPGPUVoxelInstancedMesh";
 import {
     numVoxels,
     textureHeight,
     textureWidth,
     voxelSize,
     voxelsPerAxis,
-} from "../voxelConsts";
+} from "./consts";
+import useGPGPUVoxelInstancedMesh from "./useGPUFlowFieldInstancedMesh";
 
 const voxelUniforms = {
     uTextureSize: { value: new THREE.Texture() },
@@ -26,7 +23,7 @@ const voxelUniforms = {
     uVoxelsPerAxis: { value: voxelsPerAxis },
 };
 
-export default function VoxelInstancedMesh() {
+export default function GPUFlowFieldInstancedMesh() {
     const { textureSize } = useGPGPUVoxelInstancedMesh();
 
     const voxelsGeometry = useMemo(() => {
@@ -59,9 +56,7 @@ export default function VoxelInstancedMesh() {
             const instanceColors = ["#ee5599", "#bb4422"].map((hex) =>
                 new THREE.Color(hex).convertSRGBToLinear()
             );
-            let offsetI: number;
             for (let i = 0; i < numVoxels; i++) {
-                offsetI = ~~(i + (voxelsPerAxis - 1) / 2);
                 instancedMeshRef.current.setMatrixAt(
                     i,
                     new THREE.Matrix4().setPosition(
@@ -84,16 +79,13 @@ export default function VoxelInstancedMesh() {
 
     const groupRef = useRef<THREE.Group>(null);
 
-    useFrame(({ camera }, delta) => {
+    useFrame(() => {
         if (instancedMeshRef.current && textureSize.current) {
             voxelUniforms.uTextureSize.value = textureSize.current;
         }
         if (planeRef.current && textureSize.current) {
+            // @ts-expect-error - This works, but it insists that "map" doesn't exist.
             planeRef.current.material.map = textureSize.current;
-            planeRef.current.lookAt(camera.position);
-        }
-        if (groupRef.current) {
-            // groupRef.current.rotation.y += delta * 0.1;
         }
     });
 
