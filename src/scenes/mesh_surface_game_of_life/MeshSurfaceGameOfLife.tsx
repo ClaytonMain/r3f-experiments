@@ -1,5 +1,5 @@
-import { Plane, TorusKnot } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { Hud, PerspectiveCamera, Plane, TorusKnot } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -53,23 +53,23 @@ export default function MeshSurfaceGameOfLife() {
     }
   });
 
+  const viewport = useThree((state) => state.viewport);
+
   return (
     <>
-      <Plane ref={planeRef} position={[3, 3, 0]}>
-        <meshBasicMaterial
-          attach={"material"}
-          map={textureGameState.current}
-          onBeforeCompile={(shader) => {
-            shader.vertexShader = shader.vertexShader.replace(
-              "#include <project_vertex>",
-              /* glsl */ `
-            #include <project_vertex>
-            gl_Position = vec4(position, 1.0) * vec4(0.4, 0.4, 1.0, 1.0) + vec4(0.8, 0.8, 0.0, 0.0);
-          `,
-            );
-          }}
-        />
-      </Plane>
+      <Hud>
+        <PerspectiveCamera makeDefault position={[0, 0, 8]} />
+        <ambientLight intensity={1.0} />
+        <Plane
+          ref={planeRef}
+          position={[viewport.width / 2 - 2, viewport.height / 2 - 2, 0]}
+        >
+          <meshBasicMaterial
+            attach={"material"}
+            map={textureGameState.current}
+          />
+        </Plane>
+      </Hud>
       <TorusKnot args={[1, 0.4 - 0.001, tubularSegments, radialSegments]}>
         <meshStandardMaterial color="#000" flatShading />
       </TorusKnot>
