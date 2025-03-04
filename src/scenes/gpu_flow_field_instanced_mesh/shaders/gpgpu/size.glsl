@@ -4,7 +4,7 @@ uniform vec3 uMouse3d;
 uniform sampler2D uTextureDefaultSize;
 uniform int voxelsPerAxis;
 
-#include ../../../../shared_shaders/includes/simplexNoise4d.glsl
+#include ../../../../shared/shaders/includes/simplexNoise4d.glsl
 
 void main() {
     float timeFactor = 0.1;

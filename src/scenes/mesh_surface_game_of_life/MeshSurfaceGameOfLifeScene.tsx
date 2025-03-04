@@ -1,15 +1,13 @@
-import { OrbitControls, Plane, Stats } from "@react-three/drei";
+import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
-import * as THREE from "three";
-import { voxelsPerAxis } from "./consts";
-import GPUFlowFieldInstancedMesh from "./GPUFlowFieldInstancedMesh";
+import MeshSurfaceGameOfLife from "./MeshSurfaceGameOfLife";
 
-export default function GPUFlowFieldInstancedMeshScene() {
-  const backgroundColor = "#a4e897";
+export default function MeshSurfaceGameOfLifeScene() {
+  const backgroundColor = "#f0976e";
 
   useEffect(() => {
-    document.title = "GPU Flow Field Instanced Mesh";
+    document.title = "Mesh Surface Game of Life";
     document.body.style.background = backgroundColor;
   }, []);
 
@@ -24,25 +22,12 @@ export default function GPUFlowFieldInstancedMeshScene() {
         fov: 45,
         near: 0.1,
         far: 200,
-        position: new THREE.Vector3(
-          voxelsPerAxis * 1.5,
-          voxelsPerAxis * 1.5,
-          voxelsPerAxis * 1.5,
-        ),
+        position: [0, 7, 10],
       }}
       style={{ background: backgroundColor }}
     >
       <Suspense fallback={null}>
-        <OrbitControls autoRotate autoRotateSpeed={0.5} />
-        <Plane
-          args={[100, 100]}
-          position={[0, -16, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          receiveShadow
-        >
-          <meshStandardMaterial attach="material" color={backgroundColor} />
-        </Plane>
-        <GPUFlowFieldInstancedMesh />
+        <OrbitControls autoRotate={false} autoRotateSpeed={0.5} />
         <ambientLight color={"#fff"} intensity={0.5} />
         <directionalLight
           color={"#fff"}
@@ -55,8 +40,9 @@ export default function GPUFlowFieldInstancedMeshScene() {
           shadow-camera-right={50}
           shadow-camera-top={50}
           shadow-camera-bottom={-50}
-          position={new THREE.Vector3(10, 30, 20)}
+          position={[10, 30, 20]}
         />
+        <MeshSurfaceGameOfLife />
         <Stats />
       </Suspense>
     </Canvas>
