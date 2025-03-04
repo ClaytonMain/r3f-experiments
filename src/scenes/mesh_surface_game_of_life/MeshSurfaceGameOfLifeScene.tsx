@@ -17,6 +17,7 @@ export default function MeshSurfaceGameOfLifeScene() {
         preserveDrawingBuffer: true,
         toneMappingExposure: 1.5,
       }}
+      dpr={Math.min(window.devicePixelRatio, 2)}
       shadows
       camera={{
         fov: 45,

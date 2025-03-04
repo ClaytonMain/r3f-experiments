@@ -20,6 +20,7 @@ export default function GPUFlowFieldInstancedMeshScene() {
         toneMappingExposure: 1.5,
       }}
       shadows
+      dpr={Math.min(window.devicePixelRatio, 2)}
       camera={{
         fov: 45,
         near: 0.1,
