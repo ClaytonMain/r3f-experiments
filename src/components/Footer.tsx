@@ -7,7 +7,6 @@ export default function Footer() {
   const scene = useScene();
 
   function handleSceneChange(e: ChangeEvent<HTMLSelectElement>) {
-    console.log(e.target.value);
     searchParams.set("scene", e.target.value);
     setSearchParams(searchParams);
   }
@@ -33,6 +32,7 @@ export default function Footer() {
           <option value="mesh_surface_game_of_life">
             Mesh Surface Game of Life
           </option>
+          <option value="attractor">Attractor</option>
         </select>
       </form>
     </div>

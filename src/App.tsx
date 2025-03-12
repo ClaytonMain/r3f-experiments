@@ -1,6 +1,7 @@
 import "./App.css";
 import Footer from "./components/Footer";
 import useScene from "./hooks/useScene";
+import AttractorScene from "./scenes/attractor/AttractorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 
@@ -13,6 +14,7 @@ function App() {
         <GPUFlowFieldInstancedMeshScene />
       )}
       {scene === "mesh_surface_game_of_life" && <MeshSurfaceGameOfLifeScene />}
+      {scene === "attractor" && <AttractorScene />}
       <Footer />
     </>
   );

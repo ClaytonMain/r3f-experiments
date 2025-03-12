@@ -1,6 +1,6 @@
-# Shader Practice
+# React Three Fiber Experiments
 
-Just a repo where I intend to upload miscellaneous shader-related practice.
+Just a repo where I intend to upload miscellaneous R3F experiments.
 
 ### Special Thanks
 - Bruno Simon's [three.js journey](https://threejs-journey.com/) courses.

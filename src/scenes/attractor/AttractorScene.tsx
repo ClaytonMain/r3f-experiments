@@ -1,13 +1,15 @@
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
-import MeshSurfaceGameOfLife from "./MeshSurfaceGameOfLife";
+import Attractor from "./Attractor";
+import useAttractorName from "./hooks/useAttractorName";
 
-export default function MeshSurfaceGameOfLifeScene() {
-  const backgroundColor = "#f0976e";
+export default function AttractorScene() {
+  const backgroundColor = "#18042b";
+  const attractorName = useAttractorName();
 
   useEffect(() => {
-    document.title = "Mesh Surface Game of Life";
+    document.title = "Attractor";
     document.body.style.background = backgroundColor;
   }, []);
 
@@ -28,6 +30,7 @@ export default function MeshSurfaceGameOfLifeScene() {
       style={{ background: backgroundColor }}
     >
       <Suspense fallback={null}>
+        {/* <axesHelper args={[1]} /> */}
         <OrbitControls autoRotate={true} autoRotateSpeed={0.5} />
         <ambientLight color={"#fff"} intensity={0.5} />
         <directionalLight
@@ -43,7 +46,7 @@ export default function MeshSurfaceGameOfLifeScene() {
           shadow-camera-bottom={-50}
           position={[10, 30, 20]}
         />
-        <MeshSurfaceGameOfLife />
+        <Attractor attractorName={attractorName} />
         <Stats />
       </Suspense>
     </Canvas>
