@@ -17,14 +17,8 @@ export default function useGPGPU({
   attractorName: AttractorName;
 }) {
   const gl = useThree((state) => state.gl);
-  const {
-    uAttractorId,
-    uPositionCalculationScale,
-    uVelocityCalculationScale,
-    uSystemCenter,
-    uSystemScale,
-    deltaScale,
-  } = ATTRACTOR_CONFIGS[attractorName];
+  const { uAttractorId, uSystemCenter, uSystemScale, deltaScale } =
+    ATTRACTOR_CONFIGS[attractorName];
 
   const texturePositionRef = useRef<THREE.Texture>();
   const textureVelocityRef = useRef<THREE.Texture>();
@@ -89,12 +83,6 @@ export default function useGPGPU({
     positionVariable.material.uniforms.uTime = { value: 0 };
     positionVariable.material.uniforms.uDelta = { value: 0 };
     positionVariable.material.uniforms.uAttractorId = { value: uAttractorId };
-    positionVariable.material.uniforms.uPositionCalculationScale = {
-      value: uPositionCalculationScale,
-    };
-    positionVariable.material.uniforms.uVelocityCalculationScale = {
-      value: uVelocityCalculationScale,
-    };
     positionVariable.material.uniforms.uSystemCenter = {
       value: uSystemCenter,
     };
@@ -103,16 +91,12 @@ export default function useGPGPU({
     velocityVariable.material.uniforms.uTime = { value: 0 };
     velocityVariable.material.uniforms.uDelta = { value: 0 };
     velocityVariable.material.uniforms.uAttractorId = { value: uAttractorId };
-    velocityVariable.material.uniforms.uPositionCalculationScale = {
-      value: uPositionCalculationScale,
-    };
-    velocityVariable.material.uniforms.uVelocityCalculationScale = {
-      value: uVelocityCalculationScale,
-    };
     velocityVariable.material.uniforms.uSystemCenter = {
       value: uSystemCenter,
     };
     velocityVariable.material.uniforms.uSystemScale = { value: uSystemScale };
+    velocityVariable.material.uniforms.uFlowFieldScale = { value: 0.01 };
+    velocityVariable.material.uniforms.uMinVelocity = { value: 0.001 };
 
     return {
       computation,

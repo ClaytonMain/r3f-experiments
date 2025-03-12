@@ -25,7 +25,7 @@ export default function AttractorScene() {
         fov: 45,
         near: 0.1,
         far: 200,
-        position: [0, 7, 10],
+        position: [0, 1, 2],
       }}
       style={{ background: backgroundColor }}
     >

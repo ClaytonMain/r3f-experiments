@@ -1,9 +1,11 @@
 uniform sampler2D uTexturePosition;
 uniform sampler2D uTextureVelocity;
-uniform float uPositionCalculationScale;
-uniform float uVelocityCalculationScale;
-uniform float uPositionScale;
-uniform float uVelocityScale;
+// uniform float uPositionCalculationScale;
+// uniform float uVelocityCalculationScale;
+// uniform float uPositionScale;
+// uniform float uVelocityScale;
+uniform vec3 uSystemCenter;
+uniform float uSystemScale;
 
 attribute vec2 aReference;
 
@@ -15,9 +17,9 @@ void main() {
     vec4 positionInfo = texture(uTexturePosition, aReference);
     vec4 velocityInfo = texture(uTextureVelocity, aReference);
 
-    vec3 position = positionInfo.xyz / uPositionCalculationScale * uPositionScale;
+    vec3 position = positionInfo.xyz;
+    vec3 velocity = velocityInfo.xyz;
 
-    vec3 velocity = velocityInfo.xyz / uVelocityCalculationScale * uVelocityScale;
     float velocityLength = length(velocity);
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position.xyz, 1.0);

@@ -1,4 +1,4 @@
-import { Plane } from "@react-three/drei";
+import { Icosahedron, Plane } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -15,8 +15,8 @@ import useGPGPU from "./useGPGPU";
 const particlesUniforms = {
   uTexturePosition: new THREE.Uniform(new THREE.Texture()),
   uTextureVelocity: new THREE.Uniform(new THREE.Texture()),
-  uPositionCalculationScale: new THREE.Uniform(0.001),
-  uVelocityCalculationScale: new THREE.Uniform(0.001),
+  uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
+  uSystemScale: new THREE.Uniform(1.0),
 };
 
 const texturePlaneUniforms = {
@@ -32,10 +32,8 @@ export default function Attractor({
   const viewport = useThree((state) => state.viewport);
 
   const attractorConfig = ATTRACTOR_CONFIGS[attractorName];
-  particlesUniforms.uPositionCalculationScale.value =
-    attractorConfig.uPositionCalculationScale;
-  particlesUniforms.uVelocityCalculationScale.value =
-    attractorConfig.uVelocityCalculationScale;
+  particlesUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+  particlesUniforms.uSystemScale.value = attractorConfig.uSystemScale;
 
   const positionPlaneRef = useRef<THREE.Mesh>(null!);
   const velocityPlaneRef = useRef<THREE.Mesh>(null!);
@@ -96,6 +94,9 @@ export default function Attractor({
     <>
       {/* <group rotation={[Math.PI / 2, 0, 0]} scale={[1, -1, -1]}> */}
       <group>
+        <Icosahedron args={[0.5, 4]}>
+          <meshBasicMaterial color={"#2e0952"} wireframe />
+        </Icosahedron>
         {/* <axesHelper args={[1]} /> */}
         <points
           // scale={attractorConfig.particlesScale}

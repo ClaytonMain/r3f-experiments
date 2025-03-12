@@ -1,7 +1,11 @@
 uniform float uTime;
 uniform int uAttractorId;
-uniform float uPositionCalculationScale;
-uniform float uVelocityCalculationScale;
+// uniform float uPositionCalculationScale;
+// uniform float uVelocityCalculationScale;
+uniform vec3 uSystemCenter;
+uniform float uSystemScale;
+uniform float uFlowFieldScale;
+uniform float uMinVelocity;
 
 #include ../../../../shared/shaders/includes/simplexNoise4d.glsl
 
@@ -9,7 +13,7 @@ void main() {
     vec2 uv = gl_FragCoord.xy / resolution.xy;
 
     vec4 positionInfo = texture2D(texturePosition, uv);
-    vec3 position = positionInfo.xyz / uPositionCalculationScale;
+    vec3 position = positionInfo.xyz / uSystemScale + uSystemCenter;
 
     float dxDt = 0.0;
     float dyDt = 0.0;
@@ -35,15 +39,18 @@ void main() {
 
     vec3 velocity = vec3(dxDt, dyDt, dzDt);
 
-    vec3 flowField = vec3(simplexNoise4d(vec4(position.xyz + 0.0, uTime)), simplexNoise4d(vec4(position.xyz + 1.0, uTime)), simplexNoise4d(vec4(position.xyz + 2.0, uTime)));
-    // vec3 flowField = vec3(simplexNoise4d(vec4(velocity.xyz + 0.0, uTime)), simplexNoise4d(vec4(velocity.xyz + 1.0, uTime)), simplexNoise4d(vec4(velocity.xyz + 2.0, uTime)));
-    velocity += flowField * 0.1;
-
-    vec3 newFragColorVelocity = velocity * uVelocityCalculationScale;
-
-    if(length(newFragColorVelocity) < 0.0001) {
-        newFragColorVelocity += vec3(0.001);
+    // Prevent zero velocity.
+    if(length(velocity) < uMinVelocity) {
+        velocity += vec3(uMinVelocity);
     }
 
-    gl_FragColor = vec4(newFragColorVelocity, 0.0);
+    // Scale velocity & position, then add flow field for a more consistent
+    // look between attractors.
+    vec3 scaledVelocity = velocity * uSystemScale;
+
+    vec3 flowField = vec3(simplexNoise4d(vec4(positionInfo.xyz + 0.0, uTime)), simplexNoise4d(vec4(positionInfo.xyz + 1.0, uTime)), simplexNoise4d(vec4(positionInfo.xyz + 2.0, uTime)));
+    // vec3 flowField = vec3(simplexNoise4d(vec4(velocity.xyz + 0.0, uTime)), simplexNoise4d(vec4(velocity.xyz + 1.0, uTime)), simplexNoise4d(vec4(velocity.xyz + 2.0, uTime)));
+    scaledVelocity += flowField * uFlowFieldScale;
+
+    gl_FragColor = vec4(scaledVelocity, 1.0);
 }
