@@ -9,14 +9,15 @@ import {
 } from "./consts";
 import particlesFragmentShader from "./shaders/particles/particles.frag";
 import particlesVertexShader from "./shaders/particles/particles.vert";
-import { AttractorName } from "./types";
+import { AttractorName, SearchParamsRef } from "./types";
 import useGPGPU from "./useGPGPU";
 
 const particlesUniforms = {
   uTexturePosition: new THREE.Uniform(new THREE.Texture()),
   uTextureVelocity: new THREE.Uniform(new THREE.Texture()),
   uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
-  uSystemScale: new THREE.Uniform(1.0),
+  uPositionScale: new THREE.Uniform(1.0),
+  uVelocityScale: new THREE.Uniform(1.0),
 };
 
 const texturePlaneUniforms = {
@@ -24,20 +25,41 @@ const texturePlaneUniforms = {
 };
 
 export default function Attractor({
-  attractorName,
+  searchParamsRef,
+  searchParams,
 }: {
-  attractorName: AttractorName;
+  searchParamsRef: SearchParamsRef;
+  searchParams: URLSearchParams;
 }) {
-  const { texturePosition, textureVelocity } = useGPGPU({ attractorName });
+  const attractorNameRef = useRef<AttractorName>("thomas");
+  const { texturePosition, textureVelocity } = useGPGPU({
+    searchParamsRef: searchParamsRef,
+  });
   const viewport = useThree((state) => state.viewport);
 
-  const attractorConfig = ATTRACTOR_CONFIGS[attractorName];
+  const attractorConfig = ATTRACTOR_CONFIGS[attractorNameRef.current];
   particlesUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
-  particlesUniforms.uSystemScale.value = attractorConfig.uSystemScale;
+  particlesUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+  particlesUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
 
   const positionPlaneRef = useRef<THREE.Mesh>(null!);
   const velocityPlaneRef = useRef<THREE.Mesh>(null!);
   const pointsRef = useRef<THREE.Points>(null!);
+
+  useEffect(() => {
+    searchParamsRef!.current!.setSearchParams((prev) => {
+      const params = prev;
+      params.set("asdf", "asdf");
+      return params;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    console.log(searchParams.get("speedScale"));
+  }, [searchParams]);
+
+  // http://localhost:5173/?scene=attractor&attractorName=thomas
 
   const particlesGeometry = useMemo(() => {
     const references = new Float32Array(defaultNumberOfParticles * 2);

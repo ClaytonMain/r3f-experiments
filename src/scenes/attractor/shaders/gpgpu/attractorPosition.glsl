@@ -1,10 +1,7 @@
-// uniform float uTime;
 uniform float uDelta;
-// uniform int uAttractorId;
-// uniform float uPositionCalculationScale;
-// uniform float uVelocityCalculationScale;
 uniform vec3 uSystemCenter;
-uniform float uSystemScale;
+uniform float uPositionScale;
+uniform float uVelocityScale;
 
 // #include ../../../../shared/shaders/includes/simplexNoise4d.glsl
 
@@ -14,21 +11,12 @@ void main() {
     vec4 positionInfo = texture2D(texturePosition, uv);
     vec4 velocityInfo = texture2D(textureVelocity, uv);
 
-    // vec3 position = positionInfo.xyz / uPositionCalculationScale;
-    // vec3 velocity = velocityInfo.xyz / uVelocityCalculationScale;
-
-    vec3 position = positionInfo.xyz / uSystemScale + uSystemCenter;
-    vec3 velocity = velocityInfo.xyz / uSystemScale;
+    vec3 position = positionInfo.xyz / uPositionScale + uSystemCenter;
+    vec3 velocity = velocityInfo.xyz / uVelocityScale;
 
     position += (velocity * uDelta);
 
-    // vec3 newFragColorPosition = position * uPositionCalculationScale;
-
-    // if(length(newFragColorPosition) > 1.0) {
-    //     newFragColorPosition = vec3(0.0);
-    // }
-
-    vec3 scaledPosition = (position - uSystemCenter) * uSystemScale;
+    vec3 scaledPosition = (position - uSystemCenter) * uPositionScale;
 
     gl_FragColor = vec4(scaledPosition, 1.0);
 }

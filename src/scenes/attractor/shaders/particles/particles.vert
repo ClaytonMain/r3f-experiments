@@ -1,11 +1,8 @@
 uniform sampler2D uTexturePosition;
 uniform sampler2D uTextureVelocity;
-// uniform float uPositionCalculationScale;
-// uniform float uVelocityCalculationScale;
-// uniform float uPositionScale;
-// uniform float uVelocityScale;
 uniform vec3 uSystemCenter;
-uniform float uSystemScale;
+uniform float uPositionScale;
+uniform float uVelocityScale;
 
 attribute vec2 aReference;
 
@@ -22,9 +19,9 @@ void main() {
 
     float velocityLength = length(velocity);
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position.xyz, 1.0);
-    // gl_PointSize = 1.0 / (1.0 + pow(velocityLength, 2.0)) * 10.0;
-    gl_PointSize = (2.0 - smoothstep(0.0, 20.0, velocityLength)) * 2.0 + 2.0;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    gl_PointSize = (2.0 - smoothstep(0.0, 1.0, velocityLength)) * (10.0 / -mvPosition.z);
 
     vPositionInfo = positionInfo;
     vVelocityInfo = velocityInfo;
