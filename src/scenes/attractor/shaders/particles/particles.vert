@@ -3,12 +3,16 @@ uniform sampler2D uTextureVelocity;
 uniform vec3 uSystemCenter;
 uniform float uPositionScale;
 uniform float uVelocityScale;
+uniform float uDpr;
 
 attribute vec2 aReference;
 
-varying vec4 vPositionInfo;
-varying vec4 vVelocityInfo;
+varying float vPositionLength;
 varying float vVelocityLength;
+varying float vSize;
+varying float vLife;
+
+#include ../../../../shared/shaders/includes/random.glsl
 
 void main() {
     vec4 positionInfo = texture(uTexturePosition, aReference);
@@ -17,13 +21,21 @@ void main() {
     vec3 position = positionInfo.xyz;
     vec3 velocity = velocityInfo.xyz;
 
-    float velocityLength = length(velocity);
+    float positionLength = smoothstep(0.0, 1.0, length(position));
+    float velocityLength = smoothstep(0.0, 1.0, length(velocity));
 
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = (2.0 - smoothstep(0.0, 1.0, velocityLength)) * (10.0 / -mvPosition.z);
 
-    vPositionInfo = positionInfo;
-    vVelocityInfo = velocityInfo;
-    velocityLength = vVelocityLength;
+    float life = positionInfo.w;
+    float sizeIn = smoothstep(0.0, 0.1, life);
+    float sizeOut = 1.0 - smoothstep(0.9, 1.0, life);
+    float size = min(sizeIn, sizeOut) * (1.0 / (3.0 - uDpr));
+    float sizeRandom = random(aReference) * 4.0;
+    gl_PointSize = (15.0 / -mvPosition.z) * size * sizeRandom;
+
+    vPositionLength = positionLength;
+    vVelocityLength = velocityLength;
+    vSize = size;
+    vLife = life;
 }

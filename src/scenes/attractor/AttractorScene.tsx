@@ -1,6 +1,7 @@
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useRef } from "react";
+import { useControls } from "leva";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import Footer from "../../components/Footer";
 import Attractor from "./Attractor";
@@ -8,16 +9,21 @@ import Attractor from "./Attractor";
 export default function AttractorScene() {
   const backgroundColor = "#18042b";
   const [searchParams, setSearchParams] = useSearchParams();
-  const searchParamsRef = useRef({ searchParams, setSearchParams });
-
-  useEffect(() => {
-    console.log(searchParams.values());
-  }, [searchParams]);
 
   useEffect(() => {
     document.title = "Attractor";
     document.body.style.background = backgroundColor;
   }, []);
+
+  const { autoRotate, autoRotateSpeed } = useControls("Camera", {
+    autoRotate: true,
+    autoRotateSpeed: {
+      value: 0.5,
+      min: -5,
+      max: 5,
+      step: 0.1,
+    },
+  });
 
   return (
     <>
@@ -38,7 +44,10 @@ export default function AttractorScene() {
       >
         <Suspense fallback={null}>
           {/* <axesHelper args={[1]} /> */}
-          <OrbitControls autoRotate={true} autoRotateSpeed={0.5} />
+          <OrbitControls
+            autoRotate={autoRotate}
+            autoRotateSpeed={autoRotateSpeed}
+          />
           <ambientLight color={"#fff"} intensity={0.5} />
           <directionalLight
             color={"#fff"}
@@ -54,8 +63,8 @@ export default function AttractorScene() {
             position={[10, 30, 20]}
           />
           <Attractor
-            searchParamsRef={searchParamsRef}
             searchParams={searchParams}
+            setSearchParams={setSearchParams}
           />
           <Stats />
         </Suspense>

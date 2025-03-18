@@ -1,9 +1,9 @@
 uniform float uTime;
+uniform float uDelta;
 uniform int uAttractorId;
 uniform vec3 uSystemCenter;
 uniform float uPositionScale;
 uniform float uVelocityScale;
-uniform float uVelocityFlowFieldScale;
 uniform float uMinVelocity;
 
 #include ../../../../shared/shaders/includes/simplexNoise4d.glsl
@@ -46,6 +46,26 @@ void main() {
         dxDt = (position.z - b) * position.x - d * position.y;
         dyDt = d * position.x + (position.z - b) * position.y;
         dzDt = c + a * position.z - pow(position.z, 3.0) / 3.0 - pow(position.x, 2.0) + f * position.z * pow(position.x, 3.0);
+    } else if(uAttractorId == 3) {
+        // Dadras Attractor
+        float a = 3.0;
+        float b = 2.7;
+        float c = 1.7;
+        float d = 2.0;
+        float e = 9.0;
+
+        dxDt = position.y - a * position.x + b * position.y * position.z;
+        dyDt = c * position.y - position.x * position.z + position.z;
+        dzDt = d * position.x * position.y - e * position.z;
+    } else if(uAttractorId == 4) {
+        // Chen
+        float alpha = 5.0;
+        float beta = -10.0;
+        float delta = -0.38;
+
+        dxDt = alpha * position.x - position.y * position.z;
+        dyDt = beta * position.y + position.x * position.z;
+        dzDt = delta * position.z + position.x * position.y / 3.0;
     }
 
     vec3 velocity = vec3(dxDt, dyDt, dzDt);
@@ -58,10 +78,6 @@ void main() {
     // Scale velocity down, use scaled-down position, then add
     // flow field for a more consistent look between attractors.
     vec3 scaledVelocity = velocity * uVelocityScale;
-
-    vec3 flowField = vec3(simplexNoise4d(vec4(positionInfo.xyz + 0.0, uTime)), simplexNoise4d(vec4(positionInfo.xyz + 1.0, uTime)), simplexNoise4d(vec4(positionInfo.xyz + 2.0, uTime)));
-
-    scaledVelocity += flowField * uVelocityFlowFieldScale;
 
     gl_FragColor = vec4(scaledVelocity, 1.0);
 }
