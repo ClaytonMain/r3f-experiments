@@ -1,18 +1,29 @@
-import { OrbitControls, Plane, Stats } from "@react-three/drei";
+import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { useControls } from "leva";
 import { Suspense, useEffect } from "react";
-import * as THREE from "three";
+import { useSearchParams } from "react-router";
 import Footer from "../../components/Footer";
-import { voxelsPerAxis } from "./consts";
-import GPUFlowFieldInstancedMesh from "./GPUFlowFieldInstancedMesh";
+import Attractor from "./Attractor";
 
-export default function GPUFlowFieldInstancedMeshScene() {
-  const backgroundColor = "#a4e897";
+export default function AttractorScene() {
+  const backgroundColor = "#18042b";
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    document.title = "GPU Flow Field Instanced Mesh";
+    document.title = "Attractor";
     document.body.style.background = backgroundColor;
   }, []);
+
+  const { autoRotate, autoRotateSpeed } = useControls("Camera", {
+    autoRotate: true,
+    autoRotateSpeed: {
+      value: 0.5,
+      min: -5,
+      max: 5,
+      step: 0.1,
+    },
+  });
 
   return (
     <>
@@ -21,31 +32,22 @@ export default function GPUFlowFieldInstancedMeshScene() {
           preserveDrawingBuffer: true,
           toneMappingExposure: 1.5,
         }}
-        shadows
         dpr={Math.min(window.devicePixelRatio, 2)}
+        shadows
         camera={{
           fov: 45,
           near: 0.1,
           far: 200,
-          position: new THREE.Vector3(
-            voxelsPerAxis * 1.5,
-            voxelsPerAxis * 1.5,
-            voxelsPerAxis * 1.5,
-          ),
+          position: [0, 1, 2],
         }}
         style={{ background: backgroundColor }}
       >
         <Suspense fallback={null}>
-          <OrbitControls autoRotate autoRotateSpeed={0.5} />
-          <Plane
-            args={[100, 100]}
-            position={[0, -16, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
-            receiveShadow
-          >
-            <meshStandardMaterial attach="material" color={backgroundColor} />
-          </Plane>
-          <GPUFlowFieldInstancedMesh />
+          {/* <axesHelper args={[1]} /> */}
+          <OrbitControls
+            autoRotate={autoRotate}
+            autoRotateSpeed={autoRotateSpeed}
+          />
           <ambientLight color={"#fff"} intensity={0.5} />
           <directionalLight
             color={"#fff"}
@@ -58,7 +60,11 @@ export default function GPUFlowFieldInstancedMeshScene() {
             shadow-camera-right={50}
             shadow-camera-top={50}
             shadow-camera-bottom={-50}
-            position={new THREE.Vector3(10, 30, 20)}
+            position={[10, 30, 20]}
+          />
+          <Attractor
+            searchParams={searchParams}
+            setSearchParams={setSearchParams}
           />
           <Stats />
         </Suspense>
