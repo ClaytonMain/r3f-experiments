@@ -44,7 +44,7 @@ void main() {
     //
     );
 
-    posNoise = normalize(posNoise) * 0.001 * uNoiseIntensity;
+    posNoise = normalize(posNoise) * 0.001 * uNoiseIntensity * uNoiseIntensity * uNoiseIntensity;
 
     scaledPosition += posNoise;
 
@@ -52,7 +52,7 @@ void main() {
         scaledPosition = randomizePosition(uv).xyz;
     }
 
-    float decay = positionInfo.w - uDelta * pow(uDecayFactor, 5.0);
+    float decay = positionInfo.w - uDelta * uDecayFactor * uDecayFactor * uDecayFactor * uDecayFactor;
     if(decay < 0.0) {
         scaledPosition = randomizePosition(uv).xyz;
         decay = 1.0;

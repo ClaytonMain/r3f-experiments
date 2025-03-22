@@ -1,5 +1,3 @@
-uniform float uTime;
-uniform float uDelta;
 uniform int uAttractorId;
 uniform vec3 uSystemCenter;
 uniform float uPositionScale;
@@ -45,7 +43,7 @@ void main() {
 
         dxDt = (position.z - b) * position.x - d * position.y;
         dyDt = d * position.x + (position.z - b) * position.y;
-        dzDt = c + a * position.z - pow(position.z, 3.0) / 3.0 - pow(position.x, 2.0) + f * position.z * pow(position.x, 3.0);
+        dzDt = c + a * position.z - position.z * position.z * position.z / 3.0 - position.x * position.x + f * position.z * position.x * position.x * position.x;
     } else if(uAttractorId == 3) {
         // Dadras Attractor
         float a = 3.0;
@@ -66,6 +64,40 @@ void main() {
         dxDt = alpha * position.x - position.y * position.z;
         dyDt = beta * position.y + position.x * position.z;
         dzDt = delta * position.z + position.x * position.y / 3.0;
+    } else if(uAttractorId == 5) {
+        // Lorenz83
+        float a = 0.95;
+        float b = 7.91;
+        float f = 4.83;
+        float g = 4.66;
+
+        dxDt = a * f - a * position.x - position.y * position.y - position.z * position.z;
+        dyDt = g - position.y + position.x * position.y - b * position.x * position.z;
+        dzDt = b * position.x * position.y + position.x * position.z - position.z;
+    } else if(uAttractorId == 6) {
+        // Rössler
+        float a = 0.2;
+        float b = 0.2;
+        float c = 5.7;
+
+        dxDt = -(position.y + position.z);
+        dyDt = position.x + a * position.y;
+        dzDt = b + position.z * (position.x - c);
+    } else if(uAttractorId == 7) {
+        // Halvorsen
+        float a = 1.89;
+
+        dxDt = -a * position.x - 4.0 * position.y - 4.0 * position.z - position.y * position.y;
+        dyDt = -a * position.y - 4.0 * position.z - 4.0 * position.x - position.z * position.z;
+        dzDt = -a * position.z - 4.0 * position.x - 4.0 * position.y - position.x * position.x;
+    } else if(uAttractorId == 8) {
+        // Rabinovich-Fabrikant
+        float alpha = 0.14;
+        float gamma = 0.1;
+
+        dxDt = position.y * (position.z - 1.0 + position.x * position.x) + gamma * position.x;
+        dyDt = position.x * (3.0 * position.z + 1.0 - position.x * position.x) + gamma * position.y;
+        dzDt = -2.0 * position.z * (alpha + position.x * position.y);
     }
 
     vec3 velocity = vec3(dxDt, dyDt, dzDt);

@@ -3,7 +3,9 @@ uniform int uColorMode;
 uniform vec3 uColor1;
 uniform vec3 uColor2;
 uniform vec3 uColor3;
+uniform float uBlendCenter;
 uniform float uBlendScale;
+uniform float uBlendSharpness;
 
 varying float vPositionLength;
 varying float vVelocityLength;
@@ -16,6 +18,12 @@ vec3 hsv2rgb(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
+float smoothBetween(float x, float y, float w, float t) {
+    float start = x - w;
+    float end = y + w;
+    return smoothstep(start, x, t) - smoothstep(y, end, t);
+}
+
 void main() {
     vec2 uv = gl_PointCoord;
     float distanceToCenter = length(uv - 0.5);
@@ -26,16 +34,17 @@ void main() {
     if(uColorMode == 0) {
         color = uColor1;
     } else if(uColorMode == 1) {
-        color = mix(uColor1, uColor2, uBlendScale);
+        color = mix(uColor1, uColor2, uBlendScale * vPositionLength);
     } else if(uColorMode == 2) {
-        color = mix(mix(uColor1, uColor2, uBlendScale / 3.0), uColor3, uBlendScale * 2.0 / 3.0);
+        color = mix(uColor1, uColor2, smoothBetween(uBlendCenter - uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
+        color = mix(color, uColor3, smoothBetween(uBlendCenter + uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
     }
 
     // vec3 velocityColor = hsv2rgb(vec3(smoothstep(0.0, 0.8, length(vVelocityLength)), 1.0, vLife * 0.5 + 0.5));
     // vec3 color = velocityColor;
     
     // float a = alpha * (1.0 - pow(max(0.0, abs(vPositionLength * 1.1) * 2.0 - 1.0), 3.0));
-    float a = alpha * (1.0 - pow(abs(vPositionLength), 3.0));
+    float a = alpha * (1.0 - abs(vPositionLength * vPositionLength * vPositionLength));
 
     gl_FragColor = vec4(color, a);
     #include <tonemapping_fragment>

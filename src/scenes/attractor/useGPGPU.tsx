@@ -14,27 +14,31 @@ import {
 import attractorPositionGPGPUShader from "./shaders/gpgpu/attractorPosition.glsl";
 import attractorVelocityGPGPUShader from "./shaders/gpgpu/attractorVelocity.glsl";
 import {
-  updateNumericSearchParam,
-  updateStringSearchParam,
-  validateAttractorParam,
+  getValidatedAttractorParam,
+  updateSearchParam,
 } from "./sharedFunctions";
-import { AttractorConfig, AttractorName, AttractorParams } from "./types";
+import { AttractorName, PositionUniforms, VelocityUniforms } from "./types";
 
-const attractorParams: AttractorParams = {
-  attractorName: null,
-  speedScale: null,
-  decayFactor: null,
-  noiseScale: null,
-  noiseTimeScale: null,
-  noiseIntensity: null,
+const positionUniforms: PositionUniforms = {
+  uTime: new THREE.Uniform(0),
+  uDelta: new THREE.Uniform(0),
+  uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
+  uPositionScale: new THREE.Uniform(0),
+  uVelocityScale: new THREE.Uniform(0),
+  uBaseTimeFactor: new THREE.Uniform(0),
+  uDecayFactor: new THREE.Uniform(0),
+  uNoiseScale: new THREE.Uniform(0),
+  uNoiseTimeScale: new THREE.Uniform(0),
+  uNoiseIntensity: new THREE.Uniform(0),
 };
 
-const attractorConfig: AttractorConfig = {
-  uAttractorId: null,
-  uSystemCenter: null,
-  uPositionScale: null,
-  uVelocityScale: null,
-  uBaseTimeFactor: null,
+const velocityUniforms: VelocityUniforms = {
+  uAttractorId: new THREE.Uniform(0),
+  uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
+  uPositionScale: new THREE.Uniform(0),
+  uVelocityScale: new THREE.Uniform(0),
+  uBaseTimeFactor: new THREE.Uniform(0),
+  uMinVelocity: new THREE.Uniform(0),
 };
 
 export default function useGPGPU({
@@ -45,262 +49,177 @@ export default function useGPGPU({
   setSearchParams: SetURLSearchParams;
 }) {
   const gl = useThree((state) => state.gl);
+  const attractorNameRef = useRef<AttractorName>(
+    getValidatedAttractorParam(searchParams, "attractorName"),
+  );
+  const speedScaleRef = useRef<number>(
+    getValidatedAttractorParam(searchParams, "speedScale") as number,
+  );
+
+  function handleAttractorNameChange(value: AttractorName) {
+    if (attractorNameRef.current === value) return;
+    attractorNameRef.current = value;
+    updateSearchParam(setSearchParams, "attractorName", value);
+    const attractorConfig = ATTRACTOR_CONFIGS[value];
+
+    positionUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    positionUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    positionUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+    positionUniforms.uBaseTimeFactor.value = attractorConfig.uBaseTimeFactor;
+
+    velocityUniforms.uAttractorId.value = attractorConfig.uAttractorId;
+    velocityUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    velocityUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    velocityUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+    velocityUniforms.uBaseTimeFactor.value = attractorConfig.uBaseTimeFactor;
+  }
 
   useEffect(() => {
-    const initialAttractorName = validateAttractorParam(
+    const attractorName = getValidatedAttractorParam(
+      searchParams,
       "attractorName",
-      searchParams.get("attractorName"),
-    ) as AttractorName;
-    const initialAttractorConfig = ATTRACTOR_CONFIGS[initialAttractorName];
-    attractorParams.attractorName = initialAttractorName;
-    attractorConfig.uAttractorId = initialAttractorConfig.uAttractorId;
-    attractorConfig.uSystemCenter = initialAttractorConfig.uSystemCenter;
-    attractorConfig.uPositionScale = initialAttractorConfig.uPositionScale;
-    attractorConfig.uVelocityScale = initialAttractorConfig.uVelocityScale;
-    attractorConfig.uBaseTimeFactor = initialAttractorConfig.uBaseTimeFactor;
-
-    attractorParams.speedScale = parseFloat(
-      searchParams.get("speedScale") ??
-        attractorParams.speedScale?.toString() ??
-        DEFAULT_ATTRACTOR_PARAMS.speedScale!.toString(),
-    );
-    attractorParams.decayFactor = parseFloat(
-      searchParams.get("decayFactor") ??
-        attractorParams.decayFactor?.toString() ??
-        DEFAULT_ATTRACTOR_PARAMS.decayFactor!.toString(),
     );
 
-    attractorParams.noiseScale = parseFloat(
-      searchParams.get("noiseScale") ??
-        attractorParams.noiseScale?.toString() ??
-        DEFAULT_ATTRACTOR_PARAMS.noiseScale!.toString(),
+    const attractorConfig = ATTRACTOR_CONFIGS[attractorName];
+
+    positionUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    positionUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    positionUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+    positionUniforms.uBaseTimeFactor.value = attractorConfig.uBaseTimeFactor;
+
+    velocityUniforms.uAttractorId.value = attractorConfig.uAttractorId;
+    velocityUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    velocityUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    velocityUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+    velocityUniforms.uBaseTimeFactor.value = attractorConfig.uBaseTimeFactor;
+
+    const decayFactor = getValidatedAttractorParam(searchParams, "decayFactor");
+    const noiseScale = getValidatedAttractorParam(searchParams, "noiseScale");
+    const noiseTimeScale = getValidatedAttractorParam(
+      searchParams,
+      "noiseTimeScale",
     );
-    attractorParams.noiseTimeScale = parseFloat(
-      searchParams.get("noiseTimeScale") ??
-        attractorParams.noiseTimeScale?.toString() ??
-        DEFAULT_ATTRACTOR_PARAMS.noiseTimeScale!.toString(),
+    const noiseIntensity = getValidatedAttractorParam(
+      searchParams,
+      "noiseIntensity",
     );
-    attractorParams.noiseIntensity = parseFloat(
-      searchParams.get("noiseIntensity") ??
-        attractorParams.noiseIntensity?.toString() ??
-        DEFAULT_ATTRACTOR_PARAMS.noiseIntensity!.toString(),
-    );
+
+    positionUniforms.uDecayFactor.value = decayFactor;
+    positionUniforms.uNoiseScale.value = noiseScale;
+    positionUniforms.uNoiseTimeScale.value = noiseTimeScale;
+    positionUniforms.uNoiseIntensity.value = noiseIntensity;
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    for (const [key, value] of Object.entries(attractorParams)) {
-      const searchParamsValue = searchParams.get(key);
-      let newAttractorName: AttractorName;
-      let newParamValue: number;
+  const currentTimeRef = useRef<number>(0);
 
-      switch (key) {
-        case "attractorName":
-          newAttractorName = validateAttractorParam(
-            key,
-            searchParamsValue,
-            value,
-          ) as AttractorName;
-          if (newAttractorName !== value) {
-            attractorParams.attractorName = newAttractorName;
-            const newAttractorConfig = ATTRACTOR_CONFIGS[newAttractorName];
-            attractorConfig.uAttractorId = newAttractorConfig.uAttractorId;
-            attractorConfig.uSystemCenter = newAttractorConfig.uSystemCenter;
-            attractorConfig.uPositionScale = newAttractorConfig.uPositionScale;
-            attractorConfig.uVelocityScale = newAttractorConfig.uVelocityScale;
-            attractorConfig.uBaseTimeFactor =
-              newAttractorConfig.uBaseTimeFactor;
-          }
-          break;
-        default:
-          if (key in attractorParams) {
-            newParamValue = validateAttractorParam(
-              key,
-              searchParamsValue,
-              value,
-            ) as number;
-            if (newParamValue !== value) {
-              // @ts-expect-error We'll only get to this point if the key is in attractorParams.
-              attractorParams[key] = newParamValue;
-            }
-          }
-          break;
-      }
-    }
-  }, [searchParams]);
+  function updatePositionUniform<K extends keyof PositionUniforms>(
+    key: K,
+    value: PositionUniforms[K]["value"],
+  ) {
+    positionUniforms[key].value = value;
+  }
 
-  const lastEditRef = useRef<number>(Date.now());
-  useControls({
-    attractorName: {
-      value: validateAttractorParam(
-        "attractorName",
-        searchParams.get("attractorName"),
-        attractorParams.attractorName,
-      ) as AttractorName,
-      options: ATTRACTOR_NAMES,
-      onChange: (value) => {
-        updateStringSearchParam({
-          setSearchParams,
-          key: "attractorName",
-          value,
-        });
-      },
+  // function updateVelocityUniform<K extends keyof VelocityUniforms>(
+  //   key: K,
+  //   value: VelocityUniforms[K]["value"],
+  // ) {
+  //   velocityUniforms[key].value = value;
+  // }
+
+  useControls(
+    {
+      Simulation: folder({
+        attractorName: {
+          value: getValidatedAttractorParam(searchParams, "attractorName"),
+          options: ATTRACTOR_NAMES,
+          onChange: (value) => {
+            handleAttractorNameChange(value);
+          },
+        },
+        speedScale: {
+          value: getValidatedAttractorParam(searchParams, "speedScale"),
+          min: 0,
+          max: 10,
+          step: 0.1,
+          onChange: (value) => {
+            speedScaleRef.current = value;
+          },
+          onEditEnd: (value) => {
+            speedScaleRef.current = value;
+            updateSearchParam(setSearchParams, "speedScale", value);
+          },
+        },
+        decayFactor: {
+          value: getValidatedAttractorParam(searchParams, "decayFactor"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (value) => {
+            updatePositionUniform("uDecayFactor", value);
+          },
+          onEditEnd: (value) => {
+            updatePositionUniform("uDecayFactor", value);
+            updateSearchParam(setSearchParams, "decayFactor", value);
+          },
+        },
+      }),
+      "Position Noise": folder({
+        noiseScale: {
+          value: getValidatedAttractorParam(searchParams, "noiseScale"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (value) => {
+            updatePositionUniform("uNoiseScale", value);
+          },
+          onEditEnd: (value) => {
+            updatePositionUniform("uNoiseScale", value);
+            updateSearchParam(setSearchParams, "noiseScale", value);
+          },
+        },
+        noiseTimeScale: {
+          value: getValidatedAttractorParam(searchParams, "noiseTimeScale"),
+          min: 0,
+          max: 10,
+          step: 0.1,
+          onChange: (value) => {
+            updatePositionUniform("uNoiseTimeScale", value);
+          },
+          onEditEnd: (value) => {
+            updatePositionUniform("uNoiseTimeScale", value);
+            updateSearchParam(setSearchParams, "noiseTimeScale", value);
+          },
+        },
+        noiseIntensity: {
+          value: getValidatedAttractorParam(searchParams, "noiseIntensity"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (value) => {
+            updatePositionUniform("uNoiseIntensity", value);
+          },
+          onEditEnd: (value) => {
+            updatePositionUniform("uNoiseIntensity", value);
+            updateSearchParam(setSearchParams, "noiseIntensity", value);
+          },
+        },
+      }),
     },
-    speedScale: {
-      value: validateAttractorParam(
-        "speedScale",
-        searchParams.get("speedScale"),
-        attractorParams.speedScale,
-      ) as number,
-      min: 0,
-      max: 10,
-      step: 0.1,
-      onChange: (value) => {
-        if (Date.now() - lastEditRef.current < 100) return;
-        lastEditRef.current = Date.now();
-        updateNumericSearchParam({
-          setSearchParams,
-          key: "speedScale",
-          value,
-          decimalPlaces: 1,
-        });
-      },
-      onEditEnd: (value) => {
-        lastEditRef.current = Date.now();
-        updateNumericSearchParam({
-          setSearchParams,
-          key: "speedScale",
-          value,
-          decimalPlaces: 1,
-        });
-      },
-    },
-    decayFactor: {
-      value: validateAttractorParam(
-        "decayFactor",
-        searchParams.get("decayFactor"),
-        attractorParams.decayFactor,
-      ) as number,
-      min: 0,
-      max: 1,
-      step: 0.01,
-      onChange: (value) => {
-        if (Date.now() - lastEditRef.current < 100) return;
-        lastEditRef.current = Date.now();
-        updateNumericSearchParam({
-          setSearchParams,
-          key: "decayFactor",
-          value,
-        });
-      },
-      onEditEnd: (value) => {
-        lastEditRef.current = Date.now();
-        updateNumericSearchParam({
-          setSearchParams,
-          key: "decayFactor",
-          value,
-        });
-      },
-    },
-    "Position Noise": folder({
-      noiseScale: {
-        value: validateAttractorParam(
-          "noiseScale",
-          searchParams.get("noiseScale"),
-          attractorParams.noiseScale,
-        ) as number,
-        min: 0,
-        max: 1,
-        step: 0.01,
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseScale",
-            value,
-          });
-        },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseScale",
-            value,
-          });
-        },
-      },
-      noiseTimeScale: {
-        value: validateAttractorParam(
-          "noiseTimeScale",
-          searchParams.get("noiseTimeScale"),
-          attractorParams.noiseTimeScale,
-        ) as number,
-        min: 0,
-        max: 10,
-        step: 0.1,
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseTimeScale",
-            value,
-            decimalPlaces: 1,
-          });
-        },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseTimeScale",
-            value,
-            decimalPlaces: 1,
-          });
-        },
-      },
-      noiseIntensity: {
-        value: validateAttractorParam(
-          "noiseIntensity",
-          searchParams.get("noiseIntensity"),
-          attractorParams.noiseIntensity,
-        ) as number,
-        min: 0,
-        max: 1,
-        step: 0.01,
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseIntensity",
-            value,
-          });
-        },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateNumericSearchParam({
-            setSearchParams,
-            key: "noiseIntensity",
-            value,
-          });
-        },
-      },
-    }),
-  });
+    [currentTimeRef.current],
+  );
 
   const texturePositionRef = useRef<THREE.Texture>();
   const textureVelocityRef = useRef<THREE.Texture>();
 
   const gpgpu = useMemo(() => {
-    const initialAttractorConfig =
-      ATTRACTOR_CONFIGS[
-        validateAttractorParam(
-          "attractorName",
-          searchParams.get("attractorName"),
-          attractorParams.attractorName,
-        ) as AttractorName
-      ];
+    const attractorName = getValidatedAttractorParam(
+      searchParams,
+      "attractorName",
+    );
+    const attractorConfig = ATTRACTOR_CONFIGS[attractorName];
+
     const computation = new GPUComputationRenderer(
       TEXTURE_WIDTH,
       TEXTURE_WIDTH,
@@ -359,25 +278,21 @@ export default function useGPGPU({
 
     positionVariable.material.uniforms.uTime = { value: 0 };
     positionVariable.material.uniforms.uDelta = { value: 0 };
-    positionVariable.material.uniforms.uAttractorId = {
-      value: initialAttractorConfig.uAttractorId,
-    };
     positionVariable.material.uniforms.uSystemCenter = {
-      value: initialAttractorConfig.uSystemCenter,
+      value: attractorConfig.uSystemCenter,
     };
     positionVariable.material.uniforms.uPositionScale = {
-      value: initialAttractorConfig.uPositionScale,
+      value: attractorConfig.uPositionScale,
     };
     positionVariable.material.uniforms.uVelocityScale = {
-      value: initialAttractorConfig.uVelocityScale,
+      value: attractorConfig.uVelocityScale,
     };
     positionVariable.material.uniforms.uBaseTimeFactor = {
-      value: initialAttractorConfig.uBaseTimeFactor,
+      value: attractorConfig.uBaseTimeFactor,
     };
     positionVariable.material.uniforms.uDecayFactor = {
       value: DEFAULT_ATTRACTOR_PARAMS.decayFactor,
     };
-
     positionVariable.material.uniforms.uNoiseScale = {
       value: DEFAULT_ATTRACTOR_PARAMS.noiseScale,
     };
@@ -388,24 +303,21 @@ export default function useGPGPU({
       value: DEFAULT_ATTRACTOR_PARAMS.noiseIntensity,
     };
 
-    velocityVariable.material.uniforms.uTime = { value: 0 };
-    velocityVariable.material.uniforms.uDelta = { value: 0 };
     velocityVariable.material.uniforms.uAttractorId = {
-      value: initialAttractorConfig.uAttractorId,
+      value: attractorConfig.uAttractorId,
     };
     velocityVariable.material.uniforms.uSystemCenter = {
-      value: initialAttractorConfig.uSystemCenter,
+      value: attractorConfig.uSystemCenter,
     };
     velocityVariable.material.uniforms.uPositionScale = {
-      value: initialAttractorConfig.uPositionScale,
+      value: attractorConfig.uPositionScale,
     };
     velocityVariable.material.uniforms.uVelocityScale = {
-      value: initialAttractorConfig.uVelocityScale,
+      value: attractorConfig.uVelocityScale,
     };
     velocityVariable.material.uniforms.uBaseTimeFactor = {
-      value: initialAttractorConfig.uBaseTimeFactor,
+      value: attractorConfig.uBaseTimeFactor,
     };
-
     velocityVariable.material.uniforms.uMinVelocity = { value: 0.001 };
 
     return {
@@ -426,51 +338,43 @@ export default function useGPGPU({
 
   const uTimeRef = useRef(0);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     const uDelta =
       Math.min(delta, 0.05) *
-      (attractorParams.speedScale ?? DEFAULT_ATTRACTOR_PARAMS.speedScale!);
+      (speedScaleRef.current ?? DEFAULT_ATTRACTOR_PARAMS.speedScale);
     uTimeRef.current += uDelta;
 
     gpgpu.positionVariable.material.uniforms.uTime.value = uTimeRef.current;
     gpgpu.positionVariable.material.uniforms.uDelta.value = uDelta;
-    if (attractorConfig.uAttractorId !== null) {
-      gpgpu.positionVariable.material.uniforms.uAttractorId.value =
-        attractorConfig.uAttractorId!;
-      gpgpu.positionVariable.material.uniforms.uSystemCenter.value =
-        attractorConfig.uSystemCenter!;
-      gpgpu.positionVariable.material.uniforms.uPositionScale.value =
-        attractorConfig.uPositionScale!;
-      gpgpu.positionVariable.material.uniforms.uVelocityScale.value =
-        attractorConfig.uVelocityScale!;
-      gpgpu.positionVariable.material.uniforms.uBaseTimeFactor.value =
-        attractorConfig.uBaseTimeFactor!;
-    }
-
+    gpgpu.positionVariable.material.uniforms.uSystemCenter.value =
+      positionUniforms.uSystemCenter.value;
+    gpgpu.positionVariable.material.uniforms.uPositionScale.value =
+      positionUniforms.uPositionScale.value;
+    gpgpu.positionVariable.material.uniforms.uVelocityScale.value =
+      positionUniforms.uVelocityScale.value;
+    gpgpu.positionVariable.material.uniforms.uBaseTimeFactor.value =
+      positionUniforms.uBaseTimeFactor.value;
     gpgpu.positionVariable.material.uniforms.uDecayFactor.value =
-      attractorParams.decayFactor;
-
+      positionUniforms.uDecayFactor.value;
     gpgpu.positionVariable.material.uniforms.uNoiseScale.value =
-      attractorParams.noiseScale;
+      positionUniforms.uNoiseScale.value;
     gpgpu.positionVariable.material.uniforms.uNoiseTimeScale.value =
-      attractorParams.noiseTimeScale;
+      positionUniforms.uNoiseTimeScale.value;
     gpgpu.positionVariable.material.uniforms.uNoiseIntensity.value =
-      attractorParams.noiseIntensity;
+      positionUniforms.uNoiseIntensity.value;
 
-    gpgpu.velocityVariable.material.uniforms.uTime.value = uTimeRef.current;
-    gpgpu.velocityVariable.material.uniforms.uDelta.value = uDelta;
-    if (attractorConfig.uAttractorId !== null) {
-      gpgpu.velocityVariable.material.uniforms.uAttractorId.value =
-        attractorConfig.uAttractorId!;
-      gpgpu.velocityVariable.material.uniforms.uSystemCenter.value =
-        attractorConfig.uSystemCenter!;
-      gpgpu.velocityVariable.material.uniforms.uPositionScale.value =
-        attractorConfig.uPositionScale!;
-      gpgpu.velocityVariable.material.uniforms.uVelocityScale.value =
-        attractorConfig.uVelocityScale!;
-      gpgpu.velocityVariable.material.uniforms.uBaseTimeFactor.value =
-        attractorConfig.uBaseTimeFactor!;
-    }
+    gpgpu.velocityVariable.material.uniforms.uAttractorId.value =
+      velocityUniforms.uAttractorId.value;
+    gpgpu.velocityVariable.material.uniforms.uSystemCenter.value =
+      velocityUniforms.uSystemCenter.value;
+    gpgpu.velocityVariable.material.uniforms.uPositionScale.value =
+      velocityUniforms.uPositionScale.value;
+    gpgpu.velocityVariable.material.uniforms.uVelocityScale.value =
+      velocityUniforms.uVelocityScale.value;
+    gpgpu.velocityVariable.material.uniforms.uBaseTimeFactor.value =
+      velocityUniforms.uBaseTimeFactor.value;
+    gpgpu.velocityVariable.material.uniforms.uMinVelocity.value =
+      velocityUniforms.uMinVelocity.value;
 
     gpgpu.computation.compute();
 
@@ -480,6 +384,10 @@ export default function useGPGPU({
     textureVelocityRef.current = gpgpu.computation.getCurrentRenderTarget(
       gpgpu.velocityVariable,
     ).texture;
+
+    if (clock.elapsedTime > currentTimeRef.current + 0.5) {
+      currentTimeRef.current = clock.elapsedTime;
+    }
   });
 
   return {

@@ -4,6 +4,7 @@ uniform vec3 uSystemCenter;
 uniform float uPositionScale;
 uniform float uVelocityScale;
 uniform float uDpr;
+uniform float uPositionRandomization;
 
 attribute vec2 aReference;
 
@@ -25,7 +26,8 @@ void main() {
     float velocityLength = smoothstep(0.0, 1.0, length(velocity));
 
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
+    vec3 randomVector = vec3(random(aReference), random(aReference + 1.0), random(aReference + 2.0)) * 2.0 - 1.0;
+    gl_Position = projectionMatrix * mvPosition + vec4(randomVector * uPositionRandomization, 0.0);
 
     float life = positionInfo.w;
     float sizeIn = smoothstep(0.0, 0.1, life);

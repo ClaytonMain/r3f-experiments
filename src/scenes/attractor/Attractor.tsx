@@ -1,6 +1,6 @@
-import { Plane } from "@react-three/drei";
+import { Icosahedron, Plane } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useControls } from "leva";
+import { folder, useControls } from "leva";
 import { useEffect, useMemo, useRef } from "react";
 import { SetURLSearchParams } from "react-router";
 import * as THREE from "three";
@@ -13,14 +13,14 @@ import {
 import particlesFragmentShader from "./shaders/particles/particles.frag";
 import particlesVertexShader from "./shaders/particles/particles.vert";
 import {
-  updateStringSearchParam,
-  validateAttractorParam,
-  validateStyleParam,
+  getValidatedAttractorParam,
+  getValidatedStyleParam,
+  updateSearchParam,
 } from "./sharedFunctions";
-import { AttractorName, ColorMode, StyleParams } from "./types";
+import { AttractorName, ParticlesUniforms } from "./types";
 import useGPGPU from "./useGPGPU";
 
-const particlesUniforms = {
+const particlesUniforms: ParticlesUniforms = {
   uTexturePosition: new THREE.Uniform(new THREE.Texture()),
   uTextureVelocity: new THREE.Uniform(new THREE.Texture()),
   uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
@@ -32,19 +32,15 @@ const particlesUniforms = {
   uColor1: new THREE.Uniform(new THREE.Color("#000000")),
   uColor2: new THREE.Uniform(new THREE.Color("#000000")),
   uColor3: new THREE.Uniform(new THREE.Color("#000000")),
+  uBlendCenter: new THREE.Uniform(0.0),
   uBlendScale: new THREE.Uniform(0.0),
+  uBlendSharpness: new THREE.Uniform(0.0),
+  uPositionRandomization: new THREE.Uniform(0.0),
 };
 
 const texturePlaneUniforms = {
   uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
-};
-
-const styleParams: StyleParams = {
-  colorMode: null,
-  color1: null,
-  color2: null,
-  color3: null,
-  blendScale: null,
+  uShowTexture: new THREE.Uniform(1),
 };
 
 export default function Attractor({
@@ -54,29 +50,82 @@ export default function Attractor({
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
 }) {
-  const attractorNameRef = useRef<AttractorName>(
-    validateAttractorParam(
-      "attractorName",
-      searchParams.get("attractorName"),
-    ) as AttractorName,
-  );
   const { texturePosition, textureVelocity } = useGPGPU({
     searchParams,
     setSearchParams,
   });
   const viewport = useThree((state) => state.viewport);
+  const attractorNameRef = useRef<AttractorName>(
+    getValidatedAttractorParam(searchParams, "attractorName"),
+  );
 
-  const attractorConfig = ATTRACTOR_CONFIGS[attractorNameRef.current];
-  particlesUniforms.uSystemCenter.value = attractorConfig.uSystemCenter!;
-  particlesUniforms.uPositionScale.value = attractorConfig.uPositionScale!;
-  particlesUniforms.uVelocityScale.value = attractorConfig.uVelocityScale!;
-  particlesUniforms.uDpr.value = Math.min(viewport.dpr, 2.0);
+  function handleAttractorNameChange(value: AttractorName) {
+    if (value === attractorNameRef.current) return;
+    attractorNameRef.current = value;
+    const attractorConfig = ATTRACTOR_CONFIGS[value];
+    particlesUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    particlesUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    particlesUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+  }
+
+  // On load, set the particlesUniforms based on the searchParams.
+  useEffect(() => {
+    // Get the attractorName from the searchParams and validate it. If the parameter name
+    // is invalid, the default value will be used.
+    const attractorName = getValidatedAttractorParam(
+      searchParams,
+      "attractorName",
+    );
+    // The attractorConfig contains uniform values for the attractor that the end-user
+    // cannot change (to help ensure consistent visuals between attractors).
+    const attractorConfig = ATTRACTOR_CONFIGS[attractorName];
+    particlesUniforms.uSystemCenter.value = attractorConfig.uSystemCenter;
+    particlesUniforms.uPositionScale.value = attractorConfig.uPositionScale;
+    particlesUniforms.uVelocityScale.value = attractorConfig.uVelocityScale;
+    particlesUniforms.uDpr.value = Math.min(viewport.dpr, 2.0);
+
+    // The following uniforms can be set by the end-user, so we need to use any existing
+    // values in the searchParams.
+    const colorMode = getValidatedStyleParam(searchParams, "colorMode");
+    particlesUniforms.uColorMode.value = COLOR_MODES.indexOf(colorMode);
+    particlesUniforms.uColor1.value = new THREE.Color(
+      getValidatedStyleParam(searchParams, "color1"),
+    );
+    particlesUniforms.uColor2.value = new THREE.Color(
+      getValidatedStyleParam(searchParams, "color2"),
+    );
+    particlesUniforms.uColor3.value = new THREE.Color(
+      getValidatedStyleParam(searchParams, "color3"),
+    );
+    particlesUniforms.uBlendCenter.value = getValidatedStyleParam(
+      searchParams,
+      "blendCenter",
+    );
+    particlesUniforms.uBlendScale.value = getValidatedStyleParam(
+      searchParams,
+      "blendScale",
+    );
+    particlesUniforms.uBlendSharpness.value = getValidatedStyleParam(
+      searchParams,
+      "blendSharpness",
+    );
+    particlesUniforms.uPositionRandomization.value = getValidatedStyleParam(
+      searchParams,
+      "positionRandomization",
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const positionPlaneRef = useRef<THREE.Mesh>(null!);
   const velocityPlaneRef = useRef<THREE.Mesh>(null!);
   const pointsRef = useRef<THREE.Points>(null!);
 
   const particlesGeometry = useMemo(() => {
+    // TODO: Refactor this to put the references into the positions array
+    // and get rid of the references array. Just taking up memmory that doesn't
+    // need to be used. This should be fine since the "positions" array doesn't
+    // actually get updated within the geometry, so the references values
+    // will be static.
     const references = new Float32Array(DEFAULT_PARTICLE_COUNT * 2);
     const positions = new Float32Array(DEFAULT_PARTICLE_COUNT * 3);
     for (let i = 0; i < DEFAULT_PARTICLE_COUNT; i++) {
@@ -94,207 +143,139 @@ export default function Attractor({
 
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
+    // TODO: Check if this is necessary.
     geometry.setDrawRange(0, DEFAULT_PARTICLE_COUNT);
 
     return geometry;
   }, []);
 
   useEffect(() => {
-    const initialColorMode = validateStyleParam(
-      "colorMode",
-      searchParams.get("colorMode"),
-    ) as ColorMode;
-    const color1 = validateStyleParam("color1", searchParams.get("color1"));
-    const color2 = validateStyleParam("color2", searchParams.get("color2"));
-    const color3 = validateStyleParam("color3", searchParams.get("color3"));
-    const blendScale = validateStyleParam(
-      "blendScale",
-      searchParams.get("blendScale"),
+    const attractorName = getValidatedAttractorParam(
+      searchParams,
+      "attractorName",
     );
-
-    styleParams.colorMode = initialColorMode;
-    styleParams.color1 = color1;
-    styleParams.color2 = color2;
-    styleParams.color3 = color3;
-    styleParams.blendScale = blendScale;
-
-    particlesUniforms.uColorMode.value = COLOR_MODES.indexOf(initialColorMode);
-    particlesUniforms.uColor1.value = new THREE.Color(color1);
-    particlesUniforms.uColor2.value = new THREE.Color(color2);
-    particlesUniforms.uColor3.value = new THREE.Color(color3);
-    particlesUniforms.uBlendScale.value = blendScale;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    for (const [key, value] of Object.entries(styleParams)) {
-      const searchParamsValue = searchParams.get(key);
-      let newColorMode: ColorMode;
-      let newParamValue: string;
-
-      switch (key) {
-        case "colorMode":
-          newColorMode = validateStyleParam(
-            key,
-            searchParamsValue,
-            value,
-          ) as ColorMode;
-          if (newColorMode !== value) {
-            particlesUniforms.uColorMode.value =
-              COLOR_MODES.indexOf(newColorMode);
-            styleParams.colorMode = newColorMode;
-          }
-          break;
-        default:
-          if (key in styleParams) {
-            newParamValue = validateStyleParam(key, searchParamsValue, value);
-            if (newParamValue !== value) {
-              // @ts-expect-error We'll only get to this point if the key is in styleParams.
-              styleParams[key] = newParamValue;
-              const uniformKey = `u${key[0].toUpperCase()}${key.slice(1)}`;
-              if (uniformKey in particlesUniforms) {
-                if (key === "color1" || key === "color2" || key === "color3") {
-                  // @ts-expect-error We'll only get to this point if the key is in particlesUniform
-                  particlesUniforms[uniformKey].value = new THREE.Color(
-                    newParamValue,
-                  );
-                } else {
-                  // @ts-expect-error We'll only get to this point if the key is in particlesUniform
-                  particlesUniforms[uniformKey].value = newParamValue;
-                }
-              }
-            }
-          }
-          break;
-      }
-    }
+    handleAttractorNameChange(attractorName);
   }, [searchParams]);
 
-  const lastEditRef = useRef<number>(Date.now());
   const currentTimeRef = useRef<number>(0);
 
+  function updateParticlesUniform<K extends keyof ParticlesUniforms>(
+    key: K,
+    value: ParticlesUniforms[K]["value"],
+  ) {
+    particlesUniforms[key].value = value;
+  }
+
   useControls(
-    "Colors",
     {
-      colorMode: {
-        value: validateStyleParam(
-          "colorMode",
-          searchParams.get("colorMode"),
-          styleParams.colorMode,
-        ) as ColorMode,
-        options: COLOR_MODES,
-        onChange: (value) => {
-          updateStringSearchParam({
-            setSearchParams,
-            key: "colorMode",
-            value,
-          });
+      Colors: folder({
+        colorMode: {
+          value: getValidatedStyleParam(searchParams, "colorMode"),
+          options: COLOR_MODES,
+          onChange: (value) => {
+            updateParticlesUniform("uColorMode", COLOR_MODES.indexOf(value));
+            updateSearchParam(setSearchParams, "colorMode", value);
+          },
         },
-      },
-      color1: {
-        value: validateStyleParam(
-          "color1",
-          searchParams.get("color1"),
-          styleParams.color1,
-        ),
-        render: () =>
-          ["single", "double", "triple"].includes(styleParams.colorMode!),
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          console.log("value", value);
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color1",
-            value,
-          });
+        color1: {
+          value: getValidatedStyleParam(searchParams, "color1"),
+          render: () => [0, 1, 2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uColor1", new THREE.Color(value));
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uColor1", new THREE.Color(value));
+            updateSearchParam(setSearchParams, "color1", value);
+          },
         },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color1",
-            value,
-          });
+        color2: {
+          value: getValidatedStyleParam(searchParams, "color2"),
+          render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uColor2", new THREE.Color(value));
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uColor2", new THREE.Color(value));
+            updateSearchParam(setSearchParams, "color2", value);
+          },
         },
-      },
-      color2: {
-        value: validateStyleParam(
-          "color2",
-          searchParams.get("color2"),
-          styleParams.color2,
-        ),
-        render: () => ["double", "triple"].includes(styleParams.colorMode!),
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color2",
-            value,
-          });
+        color3: {
+          value: getValidatedStyleParam(searchParams, "color3"),
+          render: () => [2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uColor3", new THREE.Color(value));
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uColor3", new THREE.Color(value));
+            updateSearchParam(setSearchParams, "color3", value);
+          },
         },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color2",
-            value,
-          });
+        blendCenter: {
+          value: getValidatedStyleParam(searchParams, "blendCenter"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uBlendCenter", value);
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uBlendCenter", value);
+            updateSearchParam(setSearchParams, "blendCenter", value);
+          },
         },
-      },
-      color3: {
-        value: validateStyleParam(
-          "color3",
-          searchParams.get("color3"),
-          styleParams.color3,
-        ),
-        render: () => styleParams.colorMode === "triple",
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color3",
-            value,
-          });
+        blendScale: {
+          value: getValidatedStyleParam(searchParams, "blendScale"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uBlendScale", value);
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uBlendScale", value);
+            updateSearchParam(setSearchParams, "blendScale", value);
+          },
         },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "color3",
-            value,
-          });
+        blendSharpness: {
+          value: getValidatedStyleParam(searchParams, "blendSharpness"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            updateParticlesUniform("uBlendSharpness", value);
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uBlendSharpness", value);
+            updateSearchParam(setSearchParams, "blendSharpness", value);
+          },
         },
-      },
-      blendScale: {
-        value: validateStyleParam(
-          "blendScale",
-          searchParams.get("blendScale"),
-          styleParams.blendScale,
-        ),
-        min: 0,
-        max: 1,
-        render: () => ["double", "triple"].includes(styleParams.colorMode!),
-        onChange: (value) => {
-          if (Date.now() - lastEditRef.current < 100) return;
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "blendScale",
-            value,
-          });
+      }),
+      "Position Style": folder({
+        positionRandomization: {
+          value: getValidatedStyleParam(searchParams, "positionRandomization"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          onChange: (value) => {
+            updateParticlesUniform("uPositionRandomization", value);
+          },
+          onEditEnd: (value) => {
+            updateParticlesUniform("uPositionRandomization", value);
+            updateSearchParam(setSearchParams, "positionRandomization", value);
+          },
         },
-        onEditEnd: (value) => {
-          lastEditRef.current = Date.now();
-          updateStringSearchParam({
-            setSearchParams,
-            key: "blendScale",
-            value,
-          });
+      }),
+      Misc: folder({
+        showGPGPUTextures: {
+          value: true,
+          onChange: (value) => {
+            texturePlaneUniforms.uShowTexture.value = value ? 1 : 0;
+          },
         },
-      },
+      }),
     },
     [currentTimeRef.current],
   );
@@ -329,7 +310,7 @@ export default function Attractor({
         velocityPlaneRef.current.material.map = textureVelocity.current;
       }
     }
-    if (clock.elapsedTime > currentTimeRef.current + 0.1) {
+    if (clock.elapsedTime > currentTimeRef.current + 0.5) {
       currentTimeRef.current = clock.elapsedTime;
     }
   });
@@ -337,10 +318,10 @@ export default function Attractor({
   return (
     <>
       {/* <group rotation={[Math.PI / 2, 0, 0]} scale={[1, -1, -1]}> */}
-      <group>
-        {/* <Icosahedron args={[0.5, 4]}>
-          <meshBasicMaterial color={"#2e0952"} wireframe />
-        </Icosahedron> */}
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        <Icosahedron args={[0.5, 4]}>
+          <meshBasicMaterial visible={false} color={"#2e0952"} wireframe />
+        </Icosahedron>
         {/* <axesHelper args={[1]} /> */}
         <points
           // scale={attractorConfig.particlesScale}
@@ -350,7 +331,11 @@ export default function Attractor({
         >
           <shaderMaterial
             attach="material"
-            uniforms={particlesUniforms}
+            uniforms={
+              particlesUniforms as unknown as {
+                [uniform: string]: THREE.IUniform;
+              }
+            }
             fragmentShader={particlesFragmentShader}
             vertexShader={particlesVertexShader}
             blending={THREE.AdditiveBlending}
@@ -368,11 +353,13 @@ export default function Attractor({
           depthWrite={false}
           onBeforeCompile={(shader) => {
             shader.uniforms.uResolution = texturePlaneUniforms.uResolution;
+            shader.uniforms.uShowTexture = texturePlaneUniforms.uShowTexture;
             shader.vertexShader = shader.vertexShader.replace(
               "#include <common>",
               /* glsl */ `
               #include <common>
               uniform vec2 uResolution;
+              uniform float uShowTexture;
               `,
             );
             shader.vertexShader = shader.vertexShader.replace(
@@ -380,6 +367,7 @@ export default function Attractor({
               /* glsl */ `
               #include <project_vertex>
               gl_Position = vec4(position, 1.0) * vec4(0.4 * (uResolution.y / uResolution.x), 0.4, 1.0, 1.0) + vec4(1.0 - (0.4 * (uResolution.y / uResolution.x)) * 0.5, 0.8, 0.0, 0.0);
+              gl_Position += vec4(vec3((1.0 - uShowTexture) * 9999.0), 0.0);
               `,
             );
           }}
@@ -393,11 +381,13 @@ export default function Attractor({
           depthWrite={false}
           onBeforeCompile={(shader) => {
             shader.uniforms.uResolution = texturePlaneUniforms.uResolution;
+            shader.uniforms.uShowTexture = texturePlaneUniforms.uShowTexture;
             shader.vertexShader = shader.vertexShader.replace(
               "#include <common>",
               /* glsl */ `
               #include <common>
               uniform vec2 uResolution;
+              uniform float uShowTexture;
               `,
             );
             shader.vertexShader = shader.vertexShader.replace(
@@ -405,6 +395,7 @@ export default function Attractor({
               /* glsl */ `
               #include <project_vertex>
               gl_Position = vec4(position, 1.0) * vec4(0.4 * (uResolution.y / uResolution.x), 0.4, 1.0, 1.0) + vec4(1.0 - (0.4 * (uResolution.y / uResolution.x)) * 0.5, 0.4, 0.0, 0.0);
+              gl_Position += vec4(vec3((1.0 - uShowTexture) * 9999.0), 0.0);
               `,
             );
           }}
