@@ -5,7 +5,12 @@ import {
   DEFAULT_ATTRACTOR_PARAMS,
   DEFAULT_STYLE_PARAMS,
 } from "./consts";
-import { AttractorName, ColorMode } from "./types";
+import {
+  AttractorName,
+  AttractorParams,
+  ColorMode,
+  StyleParams,
+} from "./types";
 
 function getValidAttractorName(
   attemptedAttractorName: string | null,
@@ -160,4 +165,103 @@ export function updateStringSearchParam({
       replace: true,
     },
   );
+}
+
+export function updateSearchParam(
+  setSearchParams: SetURLSearchParams,
+  key: string,
+  value: string | number,
+) {
+  let updatedValue = value;
+  if (typeof value === "number") {
+    updatedValue = value.toFixed(2);
+  }
+  setSearchParams(
+    (prev) => {
+      const props = prev;
+      props.set(key, updatedValue.toString());
+      return props;
+    },
+    {
+      replace: true,
+    },
+  );
+}
+
+export function getValidatedAttractorParam<
+  P extends AttractorParams,
+  K extends keyof AttractorParams,
+>(
+  searchParams: URLSearchParams,
+  paramName: K,
+  attemptedParamValue?: unknown,
+  previousParamValue?: P[K],
+): P[K] {
+  const currentSearchParamValue = searchParams.get(paramName);
+  const defaultValue = DEFAULT_ATTRACTOR_PARAMS[paramName];
+  const potentialValues = [
+    attemptedParamValue,
+    currentSearchParamValue,
+    previousParamValue,
+  ];
+
+  if (typeof defaultValue === "number") {
+    potentialValues.forEach(
+      (value, i) =>
+        (potentialValues[i] = value ? parseFloat(value.toString()) : null),
+    );
+  }
+
+  for (const value of potentialValues) {
+    if (value) {
+      if (
+        paramName === "attractorName" &&
+        ATTRACTOR_NAMES.includes(value as AttractorName)
+      ) {
+        return value as P[K];
+      } else if (typeof value === typeof defaultValue) {
+        return value as P[K];
+      }
+    }
+  }
+  return defaultValue as P[K];
+}
+
+export function getValidatedStyleParam<
+  P extends StyleParams,
+  K extends keyof StyleParams,
+>(
+  searchParams: URLSearchParams,
+  paramName: K,
+  attemptedParamValue?: unknown,
+  previousParamValue?: P[K],
+): P[K] {
+  const currentSearchParamValue = searchParams.get(paramName);
+  const defaultValue = DEFAULT_STYLE_PARAMS[paramName];
+  const potentialValues = [
+    attemptedParamValue,
+    currentSearchParamValue,
+    previousParamValue,
+  ];
+
+  if (typeof defaultValue === "number") {
+    potentialValues.forEach(
+      (value, i) =>
+        (potentialValues[i] = value ? parseFloat(value.toString()) : null),
+    );
+  }
+
+  for (const value of potentialValues) {
+    if (value) {
+      if (
+        paramName === "colorMode" &&
+        COLOR_MODES.includes(value as ColorMode)
+      ) {
+        return value as P[K];
+      } else if (typeof value === typeof defaultValue) {
+        return value as P[K];
+      }
+    }
+  }
+  return defaultValue as P[K];
 }

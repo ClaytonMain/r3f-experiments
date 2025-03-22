@@ -17,6 +17,10 @@ export const ATTRACTOR_NAMES: Array<AttractorName> = [
   "aizawa",
   "dadras",
   "chen",
+  "lorenz83",
+  "rossler",
+  "halvorsen",
+  "rabinovich_fabrikant",
 ];
 
 export const ATTRACTOR_CONFIGS: AttractorConfigs = {
@@ -55,10 +59,38 @@ export const ATTRACTOR_CONFIGS: AttractorConfigs = {
     uVelocityScale: 0.001,
     uBaseTimeFactor: 0.11,
   },
+  lorenz83: {
+    uAttractorId: 5,
+    uSystemCenter: new THREE.Vector3(0, 0, 0),
+    uPositionScale: 0.15,
+    uVelocityScale: 0.01,
+    uBaseTimeFactor: 0.1,
+  },
+  rossler: {
+    uAttractorId: 6,
+    uSystemCenter: new THREE.Vector3(0, 0, 12),
+    uPositionScale: 0.03,
+    uVelocityScale: 0.01,
+    uBaseTimeFactor: 0.1,
+  },
+  halvorsen: {
+    uAttractorId: 7,
+    uSystemCenter: new THREE.Vector3(-4, -4, -2),
+    uPositionScale: 0.04,
+    uVelocityScale: 0.01,
+    uBaseTimeFactor: 0.1,
+  },
+  rabinovich_fabrikant: {
+    uAttractorId: 8,
+    uSystemCenter: new THREE.Vector3(0, 0, 1),
+    uPositionScale: 0.2,
+    uVelocityScale: 0.5,
+    uBaseTimeFactor: 0.1,
+  },
 };
 
 export const DEFAULT_ATTRACTOR_PARAMS: AttractorParams = {
-  attractorName: "chen",
+  attractorName: "lorenz83",
   speedScale: 1.0,
   decayFactor: 0.1,
   noiseScale: 1.0,
@@ -79,9 +111,12 @@ export const COLOR_MODES: Array<ColorMode> = [
 ];
 
 export const DEFAULT_STYLE_PARAMS: StyleParams = {
-  colorMode: "single",
-  color1: "#ee5599",
-  color2: "#bb4422",
-  color3: "#ffcc00",
-  blendScale: 0.5,
+  colorMode: "triple",
+  color1: "#aa4f34",
+  color2: "#90107b",
+  color3: "#4c81de",
+  blendCenter: 0.5,
+  blendScale: 0.1,
+  blendSharpness: 0.5,
+  positionRandomization: 0.01,
 };
