@@ -30,8 +30,7 @@ export interface AttractorParams {
 
 export type AttractorConfigs = Record<AttractorName, AttractorConfig>;
 
-export type ColorMode = "single" | "double" | "triple";
-// | "rainbow"
+export type ColorMode = "single" | "double" | "triple" | "rainbow";
 // | "velocity"
 // | "position"
 // | "life"
@@ -53,6 +52,7 @@ export type PartialNull<T> = {
 };
 
 export interface ParticlesUniforms {
+  uTime: THREE.Uniform<number>;
   uTexturePosition: THREE.Uniform<THREE.Texture>;
   uTextureVelocity: THREE.Uniform<THREE.Texture>;
   uSystemCenter: THREE.Uniform<THREE.Vector3>;
