@@ -21,6 +21,7 @@ import { AttractorName, ParticlesUniforms } from "./types";
 import useGPGPU from "./useGPGPU";
 
 const particlesUniforms: ParticlesUniforms = {
+  uTime: new THREE.Uniform(0.0),
   uTexturePosition: new THREE.Uniform(new THREE.Texture()),
   uTextureVelocity: new THREE.Uniform(new THREE.Texture()),
   uSystemCenter: new THREE.Uniform(new THREE.Vector3(0, 0, 0)),
@@ -292,7 +293,13 @@ export default function Attractor({
     }
   }, [viewport]);
 
-  useFrame(({ clock }) => {
+  const uTimeRef = useRef<number>(0);
+
+  useFrame(({ clock }, delta) => {
+    const uDelta = Math.min(delta, 0.05) * 0.01;
+    uTimeRef.current += uDelta;
+
+    particlesUniforms.uTime.value = uTimeRef.current;
     if (
       pointsRef.current &&
       texturePosition.current &&

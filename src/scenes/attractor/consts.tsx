@@ -103,7 +103,7 @@ export const COLOR_MODES: Array<ColorMode> = [
   "single",
   "double",
   "triple",
-  // "rainbow",
+  "rainbow",
   // "velocity",
   // "position",
   // "life",
