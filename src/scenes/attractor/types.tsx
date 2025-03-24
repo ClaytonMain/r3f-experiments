@@ -44,6 +44,7 @@ export interface StyleParams {
   blendCenter: number;
   blendScale: number;
   blendSharpness: number;
+  colorTimeScale: number;
   positionRandomization: number;
 }
 

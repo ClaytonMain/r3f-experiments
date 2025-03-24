@@ -111,12 +111,13 @@ export const COLOR_MODES: Array<ColorMode> = [
 ];
 
 export const DEFAULT_STYLE_PARAMS: StyleParams = {
-  colorMode: "triple",
+  colorMode: "rainbow",
   color1: "#aa4f34",
   color2: "#90107b",
   color3: "#4c81de",
   blendCenter: 0.5,
-  blendScale: 0.1,
+  blendScale: 0.5,
   blendSharpness: 0.5,
-  positionRandomization: 0.01,
+  colorTimeScale: 0.3,
+  positionRandomization: 0.0,
 };
