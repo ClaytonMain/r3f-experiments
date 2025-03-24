@@ -59,6 +59,7 @@ export default function Attractor({
   const attractorNameRef = useRef<AttractorName>(
     getValidatedAttractorParam(searchParams, "attractorName"),
   );
+  const colorTimeScaleRef = useRef<number>(0.01);
 
   function handleAttractorNameChange(value: AttractorName) {
     if (value === attractorNameRef.current) return;
@@ -230,7 +231,7 @@ export default function Attractor({
           min: 0,
           max: 1,
           step: 0.01,
-          render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
+          render: () => [2, 3].includes(particlesUniforms.uColorMode.value),
           onChange: (value) => {
             updateParticlesUniform("uBlendScale", value);
           },
@@ -246,11 +247,25 @@ export default function Attractor({
           step: 0.01,
           render: () => [1, 2].includes(particlesUniforms.uColorMode.value),
           onChange: (value) => {
-            updateParticlesUniform("uBlendSharpness", value);
+            updateParticlesUniform("uBlendSharpness", 1 - value);
           },
           onEditEnd: (value) => {
-            updateParticlesUniform("uBlendSharpness", value);
-            updateSearchParam(setSearchParams, "blendSharpness", value);
+            updateParticlesUniform("uBlendSharpness", 1 - value);
+            updateSearchParam(setSearchParams, "blendSharpness", 1 - value);
+          },
+        },
+        colorTimeScale: {
+          value: getValidatedStyleParam(searchParams, "colorTimeScale"),
+          min: 0,
+          max: 1,
+          step: 0.01,
+          render: () => [3].includes(particlesUniforms.uColorMode.value),
+          onChange: (value) => {
+            colorTimeScaleRef.current = value;
+          },
+          onEditEnd: (value) => {
+            colorTimeScaleRef.current = value;
+            updateSearchParam(setSearchParams, "colorTimeScale", value);
           },
         },
       }),
@@ -296,7 +311,8 @@ export default function Attractor({
   const uTimeRef = useRef<number>(0);
 
   useFrame(({ clock }, delta) => {
-    const uDelta = Math.min(delta, 0.05) * 0.01;
+    const uDelta =
+      Math.min(delta, 0.05) * Math.pow(colorTimeScaleRef.current, 3.0);
     uTimeRef.current += uDelta;
 
     particlesUniforms.uTime.value = uTimeRef.current;

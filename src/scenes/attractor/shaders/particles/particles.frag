@@ -36,14 +36,14 @@ void main() {
         color = uColor1;
     } else if(uColorMode == 1) {
         // Double color
-        color = mix(uColor1, uColor2, uBlendScale * vPositionLength);
+        color = mix(uColor1, uColor2, smoothBetween(uBlendCenter + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
     } else if(uColorMode == 2) {
         // Triple color
         color = mix(uColor1, uColor2, smoothBetween(uBlendCenter - uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
         color = mix(color, uColor3, smoothBetween(uBlendCenter + uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
     } else if (uColorMode == 3) {
         // Rainbow cycle
-        color = hsv2rgb(vec3(mod(vPositionLength * 0.1 - uTime, 1.0), 1.0, 0.8));
+        color = hsv2rgb(vec3(mod(uTime - vPositionLength * (1.0 - uBlendScale * uBlendScale) * 0.05, 1.0), 1.0, 0.8));
     }
 
     // vec3 velocityColor = hsv2rgb(vec3(smoothstep(0.0, 0.8, length(vVelocityLength)), 1.0, vLife * 0.5 + 0.5));
