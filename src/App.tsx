@@ -3,6 +3,7 @@ import "./App.css";
 import AttractorScene from "./scenes/attractor/AttractorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
+import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           element={<MeshSurfaceGameOfLifeScene />}
         />
         <Route path="/attractor" element={<AttractorScene />} />
+        <Route path="/polygonizer" element={<PolygonizerScene />} />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>
