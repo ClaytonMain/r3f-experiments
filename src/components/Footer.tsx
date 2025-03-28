@@ -46,6 +46,7 @@ export default function Footer() {
             Mesh Surface Game of Life
           </option>
           <option value="attractor">Attractor</option>
+          <option value="polygonizer">Polygonizer</option>
         </select>
       </form>
     </div>
