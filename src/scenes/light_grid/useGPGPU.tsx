@@ -4,8 +4,8 @@ import { MutableRefObject, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 import { HEIGHT, WIDTH } from "./consts";
+import { LightGridShaderMaterial } from "./LightGridShaderMaterial";
 import gpgpuShader from "./shaders/gpgpu/gpgpu.glsl";
-import { WallGridShaderMaterial } from "./WallGridShaderMaterial";
 
 const uniformDefaults = {
   growDistance: 40,
@@ -28,7 +28,7 @@ export default function useGPGPU({
 }: {
   drawPlaneRef: MutableRefObject<THREE.Mesh>;
 }) {
-  extend({ WallGridShaderMaterial });
+  extend({ LightGridShaderMaterial });
 
   useControls({
     growDistance: {

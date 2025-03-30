@@ -1,10 +1,10 @@
 import { shaderMaterial } from "@react-three/drei";
 import * as THREE from "three";
 import { HEIGHT, WIDTH } from "./consts";
-import wallGridFragmentShader from "./shaders/wallGrid/wallGrid.frag";
-import wallGridVertexShader from "./shaders/wallGrid/wallGrid.vert";
+import lightGridFragmentShader from "./shaders/lightGrid/lightGrid.frag";
+import lightGridVertexShader from "./shaders/lightGrid/lightGrid.vert";
 
-export const WallGridShaderMaterial = shaderMaterial(
+export const LightGridShaderMaterial = shaderMaterial(
   {
     uCellScale: 0.75,
     uDelta: 0.0,
@@ -12,6 +12,6 @@ export const WallGridShaderMaterial = shaderMaterial(
     uWallWidth: WIDTH,
     uWallHeight: HEIGHT,
   },
-  wallGridVertexShader,
-  wallGridFragmentShader,
+  lightGridVertexShader,
+  lightGridFragmentShader,
 );

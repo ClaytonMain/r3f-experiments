@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { HEIGHT, WIDTH } from "./consts";
 import useGPGPU from "./useGPGPU";
 
-export default function WallGrid() {
+export default function LightGrid() {
   const planeRef = useRef<THREE.Mesh>(null!);
   const { drawTexture } = useGPGPU({ drawPlaneRef: planeRef });
   const wallScale = 0.05;
@@ -18,7 +18,7 @@ export default function WallGrid() {
       max: 1,
       step: 0.01,
       onChange: (value) => {
-        wallGridShaderMaterialRef.current.uCellScale = value;
+        lightGridShaderMaterialRef.current.uCellScale = value;
       },
     },
   });
@@ -38,14 +38,14 @@ export default function WallGrid() {
     return geometry;
   }, []);
 
-  // @ts-expect-error It doesn't like the wallGridShaderMaterial.
-  const wallGridShaderMaterialRef = useRef<wallGridShaderMaterial>(null!);
+  // @ts-expect-error It doesn't like the lightGridShaderMaterial.
+  const lightGridShaderMaterialRef = useRef<lightGridShaderMaterial>(null!);
 
   useFrame((_, delta) => {
     const uDelta = Math.min(delta, 0.1);
 
-    wallGridShaderMaterialRef.current.uDelta = uDelta;
-    wallGridShaderMaterialRef.current.uDrawTexture = drawTexture.current;
+    lightGridShaderMaterialRef.current.uDelta = uDelta;
+    lightGridShaderMaterialRef.current.uDrawTexture = drawTexture.current;
 
     if (planeRef.current) {
       // @ts-expect-error "map" does exist.
@@ -73,8 +73,8 @@ export default function WallGrid() {
         args={[undefined, undefined, WIDTH * HEIGHT]}
         geometry={particlesGeometry}
       >
-        <wallGridShaderMaterial
-          ref={wallGridShaderMaterialRef}
+        <lightGridShaderMaterial
+          ref={lightGridShaderMaterialRef}
           attach="material"
         />
       </instancedMesh>

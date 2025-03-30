@@ -2,13 +2,13 @@ import { Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
 import Footer from "../../components/Footer";
-import WallGrid from "./WallGrid";
+import LightGrid from "./LightGrid";
 
-export default function WallGridScene() {
+export default function LightGridScene() {
   const backgroundColor = "#18042b";
 
   useEffect(() => {
-    document.title = "WallGrid";
+    document.title = "LightGrid";
     document.body.style.background = backgroundColor;
   }, []);
 
@@ -47,7 +47,7 @@ export default function WallGridScene() {
             shadow-camera-bottom={-50}
             position={[10, 30, 20]}
           /> */}
-          <WallGrid />
+          <LightGrid />
           <Stats />
         </Suspense>
       </Canvas>

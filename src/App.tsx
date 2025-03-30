@@ -2,9 +2,9 @@ import { Route, Routes } from "react-router";
 import "./App.css";
 import AttractorScene from "./scenes/attractor/AttractorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
+import LightGridScene from "./scenes/light_grid/LightGridScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
-import WallGridScene from "./scenes/wall_grid/WallGridScene";
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
         />
         <Route path="/attractor" element={<AttractorScene />} />
         <Route path="/polygonizer" element={<PolygonizerScene />} />
-        <Route path="/wall_grid" element={<WallGridScene />} />
+        <Route path="/light_grid" element={<LightGridScene />} />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>
