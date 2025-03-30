@@ -1,27 +1,26 @@
 import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useControls } from "leva";
 import { Suspense, useEffect } from "react";
 import Footer from "../../components/Footer";
-import Polygonizer from "./Polygonizer";
+import WallGrid from "./WallGrid";
 
-export default function PolygonizerScene() {
+export default function WallGridScene() {
   const backgroundColor = "#18042b";
 
   useEffect(() => {
-    document.title = "Polygonizer";
+    document.title = "WallGrid";
     document.body.style.background = backgroundColor;
   }, []);
 
-  const { autoRotate, autoRotateSpeed } = useControls("Camera", {
-    autoRotate: true,
-    autoRotateSpeed: {
-      value: 0.5,
-      min: -5,
-      max: 5,
-      step: 0.1,
-    },
-  });
+  //   const { autoRotate, autoRotateSpeed } = useControls("Camera", {
+  //     autoRotate: true,
+  //     autoRotateSpeed: {
+  //       value: 0.5,
+  //       min: -5,
+  //       max: 5,
+  //       step: 0.1,
+  //     },
+  //   });
 
   return (
     <>
@@ -36,17 +35,14 @@ export default function PolygonizerScene() {
           fov: 45,
           near: 0.1,
           far: 200,
-          position: [0, 5, 8],
+          position: [0, 0, 8],
         }}
         style={{ background: backgroundColor }}
       >
         <Suspense fallback={null}>
           {/* <axesHelper args={[1]} /> */}
-          <OrbitControls
-            autoRotate={autoRotate}
-            autoRotateSpeed={autoRotateSpeed}
-          />
-          {/* <ambientLight color={"#fff"} intensity={0.5} /> */}
+          <OrbitControls makeDefault />
+          <ambientLight color={"#fff"} intensity={0.5} />
           {/* <directionalLight
             color={"#fff"}
             intensity={4}
@@ -60,7 +56,7 @@ export default function PolygonizerScene() {
             shadow-camera-bottom={-50}
             position={[10, 30, 20]}
           /> */}
-          <Polygonizer />
+          <WallGrid />
           <Stats />
         </Suspense>
       </Canvas>
