@@ -1,11 +1,9 @@
-import { Bounds, Plane, shaderMaterial } from "@react-three/drei";
-import { extend, useFrame } from "@react-three/fiber";
+import { Plane } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { useControls } from "leva";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { HEIGHT, WIDTH } from "./consts";
-import wallGridFragmentShader from "./shaders/wallGrid/wallGrid.frag";
-import wallGridVertexShader from "./shaders/wallGrid/wallGrid.vert";
 import useGPGPU from "./useGPGPU";
 
 export default function WallGrid() {
@@ -20,7 +18,7 @@ export default function WallGrid() {
       max: 1,
       step: 0.01,
       onChange: (value) => {
-        particlesMaterialRef.current.uCellScale = value;
+        wallGridShaderMaterialRef.current.uCellScale = value;
       },
     },
   });
@@ -40,29 +38,17 @@ export default function WallGrid() {
     return geometry;
   }, []);
 
-  const ParticlesMaterial = shaderMaterial(
-    {
-      uCellScale: 0.75,
-      uDelta: 0.0,
-      uDrawTexture: new THREE.Texture(),
-      uWallWidth: WIDTH,
-      uWallHeight: HEIGHT,
-    },
-    wallGridVertexShader,
-    wallGridFragmentShader,
-  );
-
-  extend({ ParticlesMaterial });
-
-  const particlesMaterialRef = useRef<THREE.ShaderMaterial>(null!);
+  // @ts-expect-error It doesn't like the wallGridShaderMaterial.
+  const wallGridShaderMaterialRef = useRef<wallGridShaderMaterial>(null!);
 
   useFrame((_, delta) => {
     const uDelta = Math.min(delta, 0.1);
 
-    particlesMaterialRef.current.uDelta = uDelta;
-    particlesMaterialRef.current.uDrawTexture = drawTexture.current;
+    wallGridShaderMaterialRef.current.uDelta = uDelta;
+    wallGridShaderMaterialRef.current.uDrawTexture = drawTexture.current;
 
     if (planeRef.current) {
+      // @ts-expect-error "map" does exist.
       planeRef.current.material.map = drawTexture.current;
     }
   });
@@ -87,7 +73,10 @@ export default function WallGrid() {
         args={[undefined, undefined, WIDTH * HEIGHT]}
         geometry={particlesGeometry}
       >
-        <particlesMaterial ref={particlesMaterialRef} attach="material" />
+        <wallGridShaderMaterial
+          ref={wallGridShaderMaterialRef}
+          attach="material"
+        />
       </instancedMesh>
     </>
   );

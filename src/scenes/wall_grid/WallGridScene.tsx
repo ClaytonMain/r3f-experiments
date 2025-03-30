@@ -1,4 +1,4 @@
-import { OrbitControls, Stats } from "@react-three/drei";
+import { Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
 import Footer from "../../components/Footer";
@@ -12,16 +12,6 @@ export default function WallGridScene() {
     document.body.style.background = backgroundColor;
   }, []);
 
-  //   const { autoRotate, autoRotateSpeed } = useControls("Camera", {
-  //     autoRotate: true,
-  //     autoRotateSpeed: {
-  //       value: 0.5,
-  //       min: -5,
-  //       max: 5,
-  //       step: 0.1,
-  //     },
-  //   });
-
   return (
     <>
       <Canvas
@@ -29,6 +19,7 @@ export default function WallGridScene() {
           preserveDrawingBuffer: true,
           toneMappingExposure: 1.5,
         }}
+        className="touch-none"
         dpr={Math.min(window.devicePixelRatio, 2)}
         shadows
         camera={{
@@ -41,7 +32,7 @@ export default function WallGridScene() {
       >
         <Suspense fallback={null}>
           {/* <axesHelper args={[1]} /> */}
-          <OrbitControls makeDefault />
+          {/* <OrbitControls makeDefault /> */}
           <ambientLight color={"#fff"} intensity={0.5} />
           {/* <directionalLight
             color={"#fff"}

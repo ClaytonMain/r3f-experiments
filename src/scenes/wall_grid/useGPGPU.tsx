@@ -1,52 +1,80 @@
-import { useFrame, useThree } from "@react-three/fiber";
+import { extend, useFrame, useThree } from "@react-three/fiber";
 import { useControls } from "leva";
 import { MutableRefObject, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 import { HEIGHT, WIDTH } from "./consts";
 import gpgpuShader from "./shaders/gpgpu/gpgpu.glsl";
+import { WallGridShaderMaterial } from "./WallGridShaderMaterial";
+
+const uniformDefaults = {
+  growDistance: 40,
+  growSpeed: 0.9,
+  growSpeedSpread: 0.2,
+  fadeSpeed: 1.0,
+  fadeSpeedSpread: 3.0,
+};
+
+const uniforms = {
+  growDistance: uniformDefaults.growDistance,
+  growSpeed: uniformDefaults.growSpeed,
+  growSpeedSpread: uniformDefaults.growSpeedSpread,
+  fadeSpeed: uniformDefaults.fadeSpeed,
+  fadeSpeedSpread: uniformDefaults.fadeSpeedSpread,
+};
 
 export default function useGPGPU({
   drawPlaneRef,
 }: {
   drawPlaneRef: MutableRefObject<THREE.Mesh>;
 }) {
-  const {
-    growDistance,
-    growSpeed,
-    growSpeedSpread,
-    fadeSpeed,
-    fadeSpeedSpread,
-  } = useControls({
+  extend({ WallGridShaderMaterial });
+
+  useControls({
     growDistance: {
-      value: 10,
+      value: uniformDefaults.growDistance,
       min: 1,
       max: 50,
       step: 1,
+      onChange: (value) => {
+        uniforms.growDistance = value;
+      },
     },
     growSpeed: {
-      value: 0.9,
+      value: uniformDefaults.growSpeed,
       min: 0,
       max: 5,
       step: 0.01,
+      onChange: (value) => {
+        uniforms.growSpeed = value;
+      },
     },
     growSpeedSpread: {
-      value: 0.2,
+      value: uniformDefaults.growSpeedSpread,
       min: 0,
       max: 5,
       step: 0.01,
+      onChange: (value) => {
+        uniforms.growSpeedSpread = value;
+      },
     },
     fadeSpeed: {
-      value: 0.2,
+      value: uniformDefaults.fadeSpeed,
       min: 0,
       max: 5,
       step: 0.01,
+      onChange: (value) => {
+        uniforms.fadeSpeed = value;
+      },
     },
     fadeSpeedSpread: {
-      value: 0.8,
+      value: uniformDefaults.fadeSpeedSpread,
       min: 0,
       max: 5,
       step: 0.01,
+      onChange: (value) => {
+        uniforms.fadeSpeedSpread = value;
+      },
     },
   });
   const gl = useThree((state) => state.gl);
@@ -61,8 +89,12 @@ export default function useGPGPU({
     for (let i = 0; i < WIDTH * HEIGHT; i++) {
       const i4 = i * 4;
       drawTextureArray[i4 + 0] = 0.0;
-      drawTextureArray[i4 + 1] = Math.random() * fadeSpeed + fadeSpeedSpread;
-      drawTextureArray[i4 + 2] = Math.random() * growSpeed + growSpeedSpread;
+      drawTextureArray[i4 + 1] =
+        Math.random() * uniformDefaults.fadeSpeed +
+        uniformDefaults.fadeSpeedSpread;
+      drawTextureArray[i4 + 2] =
+        Math.random() * uniformDefaults.growSpeed +
+        uniformDefaults.growSpeedSpread;
       drawTextureArray[i4 + 3] = 0.0;
     }
 
@@ -83,22 +115,22 @@ export default function useGPGPU({
       new THREE.Vector3(),
     );
     drawTextureVariable.material.uniforms.uMouseVelocity = new THREE.Uniform(
-      new THREE.Vector3(),
+      0.0,
     );
     drawTextureVariable.material.uniforms.uGrowDistance = new THREE.Uniform(
-      growDistance,
+      uniformDefaults.growDistance,
     );
     drawTextureVariable.material.uniforms.uGrowSpeed = new THREE.Uniform(
-      growSpeed,
+      uniformDefaults.growSpeed,
     );
     drawTextureVariable.material.uniforms.uGrowSpeedSpread = new THREE.Uniform(
-      growSpeedSpread,
+      uniformDefaults.growSpeedSpread,
     );
     drawTextureVariable.material.uniforms.uFadeSpeed = new THREE.Uniform(
-      fadeSpeed,
+      uniformDefaults.fadeSpeed,
     );
     drawTextureVariable.material.uniforms.uFadeSpeedSpread = new THREE.Uniform(
-      fadeSpeedSpread,
+      uniformDefaults.fadeSpeedSpread,
     );
 
     return {
@@ -131,9 +163,10 @@ export default function useGPGPU({
         intersects[0].uv,
       );
       if (intersects[0].uv) {
-        gpgpu.drawTextureVariable.material.uniforms.uMouseVelocity.value.copy(
-          intersects[0].uv.clone().sub(mousePositionRef.current),
-        );
+        gpgpu.drawTextureVariable.material.uniforms.uMouseVelocity.value =
+          mousePositionRef.current.distanceTo(
+            new THREE.Vector3(intersects[0].uv.x, intersects[0].uv.y, 0),
+          );
         mousePositionRef.current.x = intersects[0].uv.x;
         mousePositionRef.current.y = intersects[0].uv.y;
       }
@@ -141,13 +174,15 @@ export default function useGPGPU({
 
     gpgpu.drawTextureVariable.material.uniforms.uDelta.value = uDelta;
     gpgpu.drawTextureVariable.material.uniforms.uGrowDistance.value =
-      growDistance;
-    gpgpu.drawTextureVariable.material.uniforms.uGrowSpeed.value = growSpeed;
+      uniforms.growDistance;
+    gpgpu.drawTextureVariable.material.uniforms.uGrowSpeed.value =
+      uniforms.growSpeed;
     gpgpu.drawTextureVariable.material.uniforms.uGrowSpeedSpread.value =
-      growSpeedSpread;
-    gpgpu.drawTextureVariable.material.uniforms.uFadeSpeed.value = fadeSpeed;
+      uniforms.growSpeedSpread;
+    gpgpu.drawTextureVariable.material.uniforms.uFadeSpeed.value =
+      uniforms.fadeSpeed;
     gpgpu.drawTextureVariable.material.uniforms.uFadeSpeedSpread.value =
-      fadeSpeedSpread;
+      uniforms.fadeSpeedSpread;
 
     gpgpu.computation.compute();
 
