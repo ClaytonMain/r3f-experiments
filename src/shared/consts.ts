@@ -7,5 +7,6 @@ export const SCENES: ValidScene[] = [
   "mesh_surface_game_of_life",
   "attractor",
   "polygonizer",
-  "wall_grid",
+  "light_grid",
+  "snow",
 ];

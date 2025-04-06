@@ -48,6 +48,7 @@ export default function Footer() {
           <option value="attractor">Attractor</option>
           <option value="polygonizer">Polygonizer</option>
           <option value="light_grid">Light Grid</option>
+          <option value="snow">Snow</option>
         </select>
       </form>
     </div>
