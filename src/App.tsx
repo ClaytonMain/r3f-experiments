@@ -5,6 +5,7 @@ import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_me
 import LightGridScene from "./scenes/light_grid/LightGridScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
+import SnowScene from "./scenes/snow/SnowScene";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/attractor" element={<AttractorScene />} />
         <Route path="/polygonizer" element={<PolygonizerScene />} />
         <Route path="/light_grid" element={<LightGridScene />} />
+        <Route path="/snow" element={<SnowScene />} />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>
