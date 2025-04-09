@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import "./App.css";
 import AttractorScene from "./scenes/attractor/AttractorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
+import IntroductionToRaymarchingScene from "./scenes/introduction_to_raymarching/IntroductionToRaymarchingScene";
 import LightGridScene from "./scenes/light_grid/LightGridScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
@@ -23,6 +24,10 @@ function App() {
         <Route path="/polygonizer" element={<PolygonizerScene />} />
         <Route path="/light_grid" element={<LightGridScene />} />
         <Route path="/snow" element={<SnowScene />} />
+        <Route
+          path="/introduction_to_raymarching"
+          element={<IntroductionToRaymarchingScene />}
+        />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>
