@@ -4,7 +4,8 @@ export type ValidScene =
   | "attractor"
   | "polygonizer"
   | "light_grid"
-  | "snow";
+  | "snow"
+  | "introduction_to_raymarching";
 
 export interface ValidUrlSearchParams {
   scene: ValidScene;

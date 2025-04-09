@@ -49,6 +49,9 @@ export default function Footer() {
           <option value="polygonizer">Polygonizer</option>
           <option value="light_grid">Light Grid</option>
           <option value="snow">Snow</option>
+          <option value="introduction_to_raymarching">
+            Introduction to Raymarching
+          </option>
         </select>
       </form>
     </div>

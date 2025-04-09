@@ -9,4 +9,5 @@ export const SCENES: ValidScene[] = [
   "polygonizer",
   "light_grid",
   "snow",
+  "introduction_to_raymarching",
 ];
