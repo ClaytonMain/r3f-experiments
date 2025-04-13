@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router";
 import "./App.css";
 import AttractorScene from "./scenes/attractor/AttractorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
+import InfinityMirrorScene from "./scenes/infinity_mirror/InfinityMirrorScene";
 import IntroductionToRaymarchingScene from "./scenes/introduction_to_raymarching/IntroductionToRaymarchingScene";
 import LightGridScene from "./scenes/light_grid/LightGridScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
@@ -28,6 +29,7 @@ function App() {
           path="/introduction_to_raymarching"
           element={<IntroductionToRaymarchingScene />}
         />
+        <Route path="/infinity_mirror" element={<InfinityMirrorScene />} />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>

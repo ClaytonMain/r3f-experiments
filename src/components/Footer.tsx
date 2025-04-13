@@ -52,6 +52,7 @@ export default function Footer() {
           <option value="introduction_to_raymarching">
             Introduction to Raymarching
           </option>
+          <option value="infinity_mirror">Infinity Mirror</option>
         </select>
       </form>
     </div>

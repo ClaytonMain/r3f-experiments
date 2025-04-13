@@ -5,7 +5,8 @@ export type ValidScene =
   | "polygonizer"
   | "light_grid"
   | "snow"
-  | "introduction_to_raymarching";
+  | "introduction_to_raymarching"
+  | "infinity_mirror";
 
 export interface ValidUrlSearchParams {
   scene: ValidScene;
