@@ -1,10 +1,5 @@
 uniform float uTime;
 uniform vec3 uCameraPosition;
-uniform vec3 uCameraRotation;
-uniform vec2 uResolution;
-varying vec2 vUv;
-varying mat4 vProjectionMatrix;
-varying mat4 vModelViewMatrix;
 varying vec4 vFragWorldPosition;
 
 float sdfSphere(vec3 p, float r) {

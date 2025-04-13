@@ -10,4 +10,5 @@ export const SCENES: ValidScene[] = [
   "light_grid",
   "snow",
   "introduction_to_raymarching",
+  "infinity_mirror",
 ];
