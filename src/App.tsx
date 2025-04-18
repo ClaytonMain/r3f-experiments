@@ -5,6 +5,7 @@ import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_me
 import InfinityMirrorScene from "./scenes/infinity_mirror/InfinityMirrorScene";
 import IntroductionToRaymarchingScene from "./scenes/introduction_to_raymarching/IntroductionToRaymarchingScene";
 import LightGridScene from "./scenes/light_grid/LightGridScene";
+import MengerSpongeScene from "./scenes/menger_sponge/MengerSpongeScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
 import SnowScene from "./scenes/snow/SnowScene";
@@ -30,6 +31,7 @@ function App() {
           element={<IntroductionToRaymarchingScene />}
         />
         <Route path="/infinity_mirror" element={<InfinityMirrorScene />} />
+        <Route path="/menger_sponge" element={<MengerSpongeScene />} />
         <Route path="*" element={<AttractorScene />} />
       </Routes>
     </>

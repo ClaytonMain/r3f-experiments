@@ -6,7 +6,8 @@ export type ValidScene =
   | "light_grid"
   | "snow"
   | "introduction_to_raymarching"
-  | "infinity_mirror";
+  | "infinity_mirror"
+  | "menger_sponge";
 
 export interface ValidUrlSearchParams {
   scene: ValidScene;

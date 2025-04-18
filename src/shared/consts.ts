@@ -11,4 +11,5 @@ export const SCENES: ValidScene[] = [
   "snow",
   "introduction_to_raymarching",
   "infinity_mirror",
+  "menger_sponge",
 ];
