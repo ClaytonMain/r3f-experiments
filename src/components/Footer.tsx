@@ -25,18 +25,18 @@ function Information({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed top-0 left-0 z-50 flex h-screen w-full cursor-pointer items-center justify-center bg-slate-600/70"
+      className="fixed top-0 left-0 z-50000 flex h-screen w-full cursor-pointer items-center justify-center bg-slate-600/70"
       onClick={() => setShowInformation(false)}
     >
-      <div className="h-1/2 w-full max-w-2xl p-4">
+      <div className="h-1/2 w-full max-w-2xl cursor-auto p-4">
         <motion.div
           initial={{ scale: 0.8 }}
           animate={{ scale: 1 }}
           exit={{ scale: 0.8 }}
-          className="relative h-full overflow-y-auto rounded-lg bg-slate-800 shadow-sm"
+          className="relative max-h-full overflow-y-auto rounded-lg bg-slate-800 shadow-sm"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between rounded-t border-b border-slate-600 p-4 md:p-5">
+          <div className="sticky top-0 flex items-center justify-between rounded-t border-b border-slate-600 bg-slate-800 p-4 md:p-5">
             {header && (
               <h3 className="text-xl font-semibold text-white">{header}</h3>
             )}

@@ -10,7 +10,6 @@ uniform float uGlZ;
 uniform int uFrameNumber;
 
 varying mat4 vViewMatrix;
-varying mat4 vProjectionMatrix;
 
 #define PI2 6.28318530718
 #define PI 3.14159265359
