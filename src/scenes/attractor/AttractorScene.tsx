@@ -6,6 +6,47 @@ import { useSearchParams } from "react-router";
 import Footer from "../../components/Footer";
 import Attractor from "./Attractor";
 
+function FooterInformation() {
+  return (
+    <div className="flex flex-col gap-y-3 indent-6 text-white">
+      <p>
+        These are various{" "}
+        <a
+          href="https://en.wikipedia.org/wiki/Attractor"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+        >
+          Attractors
+        </a>{" "}
+        simulated using GPGPU. Most, if not all, of the formulas for these
+        attractors are from{" "}
+        <a
+          href="https://www.dynamicmath.xyz/strange-attractors/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+        >
+          this article
+        </a>{" "}
+        by Juan Carlos Ponce Campuzano.
+      </p>
+      <p>
+        I wanted to get a little more experience using GPGPU inside of R3F, and
+        attractors seemed like a fun way to do that.
+      </p>
+      <p>
+        There are a few issues that can cause some lag, such as allowing too
+        many particles to overlap, but overall I'm fairly pleased with how
+        decently it runs.
+      </p>
+      <div className="w-full text-end text-sm text-slate-300">
+        Originally added: Mar. 2025
+      </div>
+    </div>
+  );
+}
+
 export default function AttractorScene() {
   const backgroundColor = "#18042b";
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,7 +110,7 @@ export default function AttractorScene() {
           <Stats />
         </Suspense>
       </Canvas>
-      <Footer />
+      <Footer information={<FooterInformation />} header="About" />
     </>
   );
 }

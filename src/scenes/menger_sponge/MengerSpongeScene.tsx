@@ -44,22 +44,6 @@ function FooterInformation() {
         I may come back to this at some point and try to make it look better and
         add more options to the panel, but for now I'll leave it as-is.
       </p>
-      <p>
-        I may come back to this at some point and try to make it look better and
-        add more options to the panel, but for now I'll leave it as-is.
-      </p>
-      <p>
-        I may come back to this at some point and try to make it look better and
-        add more options to the panel, but for now I'll leave it as-is.
-      </p>
-      <p>
-        I may come back to this at some point and try to make it look better and
-        add more options to the panel, but for now I'll leave it as-is.
-      </p>
-      <p>
-        I may come back to this at some point and try to make it look better and
-        add more options to the panel, but for now I'll leave it as-is.
-      </p>
       <div className="w-full text-end text-sm text-slate-300">
         Originally added: Apr 2025
       </div>

@@ -6,17 +6,18 @@ import restart from "vite-plugin-restart";
 
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [
-        react(),
-        restart({
-            restart: ["src/**/shaders/**/*"],
-        }),
-        glsl({
-            watch: true,
-        }),
-        tailwindcss(),
-    ],
-    server: {
-        host: true,
-    },
+  plugins: [
+    react(),
+    restart({
+      // restart: ["src/**/shaders/**/*", "src/**/*.tsx"],
+      restart: ["src/**/shaders/**/*"],
+    }),
+    glsl({
+      watch: true,
+    }),
+    tailwindcss(),
+  ],
+  server: {
+    host: true,
+  },
 });
