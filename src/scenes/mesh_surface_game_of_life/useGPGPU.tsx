@@ -15,7 +15,7 @@ import gameOfLifeGPGPUShader from "./shaders/gpgpu/gameOfLife.glsl";
 export default function useGPGPU() {
   const gl = useThree((state) => state.gl);
 
-  const textureGameStateRef = useRef<THREE.Texture>();
+  const textureGameStateRef = useRef<THREE.Texture>(null);
 
   const gpgpu = useMemo(() => {
     const computation = new GPUComputationRenderer(
