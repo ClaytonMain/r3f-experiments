@@ -11,8 +11,8 @@ export default defineConfig({
     tsconfigPaths(),
     react(),
     restart({
-      restart: ["src/**/shaders/**/*", "src/**/*.tsx"],
-      // restart: ["src/**/shaders/**/*"],
+      // restart: ["src/**/shaders/**/*", "src/**/*.tsx"],
+      restart: ["src/**/shaders/**/*"],
     }),
     glsl({
       watch: true,
