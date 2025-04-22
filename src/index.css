@@ -1,13 +1,13 @@
-@import "tailwindcss";
-@import "flowbite/src/themes/default";
+/* @import "tailwindcss";
+@import "flowbite/src/themes/default"; */
 
 html,
 body,
 #root {
-    top: 0;
-    left: 0;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
 }
