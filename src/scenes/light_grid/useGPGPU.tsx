@@ -1,6 +1,6 @@
 import { extend, useFrame, useThree } from "@react-three/fiber";
 import { useControls } from "leva";
-import { MutableRefObject, useLayoutEffect, useMemo, useRef } from "react";
+import { RefObject, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 import { HEIGHT, WIDTH } from "./consts";
@@ -26,7 +26,7 @@ const uniforms = {
 export default function useGPGPU({
   drawPlaneRef,
 }: {
-  drawPlaneRef: MutableRefObject<THREE.Mesh>;
+  drawPlaneRef: RefObject<THREE.Mesh>;
 }) {
   extend({ LightGridShaderMaterial });
 
@@ -79,7 +79,7 @@ export default function useGPGPU({
   });
   const gl = useThree((state) => state.gl);
 
-  const drawTextureRef = useRef<THREE.Texture>();
+  const drawTextureRef = useRef<THREE.Texture>(null!);
 
   const gpgpu = useMemo(() => {
     const computation = new GPUComputationRenderer(WIDTH, HEIGHT, gl);

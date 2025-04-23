@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from "motion/react";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { ChangeEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { DEFAULT_SCENE, SCENES } from "../shared/consts";
 import { ValidScene } from "../shared/types";
 
-function Information({ information }: { information?: string | JSX.Element }) {
+function Information({ information }: { information?: string | ReactNode }) {
   const [showInformation, setShowInformation] = useState(false);
 
   return (
@@ -60,7 +60,7 @@ function Information({ information }: { information?: string | JSX.Element }) {
 export default function Footer({
   information,
 }: {
-  information?: string | JSX.Element;
+  information?: string | ReactNode;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
