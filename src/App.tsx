@@ -31,7 +31,7 @@ function App() {
       />
       <Route path="/infinity_mirror" element={<InfinityMirrorScene />} />
       <Route path="/menger_sponge" element={<MengerSpongeScene />} />
-      <Route path="*" element={<GPUFlowFieldInstancedMeshScene />} />
+      <Route path="*" element={<AttractorScene />} />
     </Routes>
   );
 }

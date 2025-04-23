@@ -210,8 +210,8 @@ export default function useGPGPU({
     [currentTimeRef.current],
   );
 
-  const texturePositionRef = useRef<THREE.Texture>();
-  const textureVelocityRef = useRef<THREE.Texture>();
+  const texturePositionRef = useRef<THREE.Texture>(null!);
+  const textureVelocityRef = useRef<THREE.Texture>(null!);
 
   const gpgpu = useMemo(() => {
     const attractorName = getValidatedAttractorParam(

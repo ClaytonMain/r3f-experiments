@@ -1,13 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { RapierCollider, RapierRigidBody } from "@react-three/rapier";
 import { useControls } from "leva";
-import {
-  MutableRefObject,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { RefObject, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
 import { HEIGHT, WIDTH } from "./consts";
@@ -42,8 +36,8 @@ export default function useGPGPU({
   snowHeight,
   planeScale,
 }: {
-  sensorRef: MutableRefObject<RapierCollider>;
-  ballRef: MutableRefObject<RapierRigidBody>;
+  sensorRef: RefObject<RapierCollider>;
+  ballRef: RefObject<RapierRigidBody>;
   ballRadius: number;
   planeScale: number;
   snowHeight: number;
@@ -70,7 +64,7 @@ export default function useGPGPU({
   });
   const gl = useThree((state) => state.gl);
 
-  const drawTextureRef = useRef<THREE.Texture>();
+  const drawTextureRef = useRef<THREE.Texture>(null!);
 
   const gpgpu = useMemo(() => {
     const computation = new GPUComputationRenderer(WIDTH * 16, HEIGHT * 16, gl);
