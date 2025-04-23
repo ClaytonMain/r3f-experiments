@@ -9,7 +9,8 @@ export default defineConfig({
   plugins: [
     react(),
     restart({
-      // restart: ["src/**/shaders/**/*"],
+      // restart: ["src/**/shaders/**/*", "src/**/*.tsx"],
+      restart: ["src/**/shaders/**/*"],
     }),
     glsl({
       watch: true,
