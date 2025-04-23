@@ -16,7 +16,7 @@ function Information({
   setShowInformation,
   header,
 }: {
-  information?: string | JSX.Element;
+  information?: string | React.JSX.Element;
   setShowInformation: Dispatch<SetStateAction<boolean>>;
   header?: string;
 }) {
@@ -74,7 +74,7 @@ export default function Footer({
   information,
   header,
 }: {
-  information?: string | JSX.Element;
+  information?: string | React.JSX.Element;
   header?: string;
 }) {
   const [showInformation, setShowInformation] = useState(false);
