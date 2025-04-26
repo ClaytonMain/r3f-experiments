@@ -20,7 +20,7 @@ export default function SlimeMoldScene() {
           toneMappingExposure: 1.5,
         }}
         className="touch-none"
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        dpr={1.0}
         shadows
         camera={{
           fov: 45,
