@@ -1,142 +1,102 @@
-import { extend, useFrame, useThree } from "@react-three/fiber";
-import { useControls } from "leva";
-import { MutableRefObject, useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
-import { HEIGHT, WIDTH } from "./consts";
+import { HEIGHT, NUM_AGENTS, WIDTH } from "./consts";
 import agentDataShader from "./shaders/gpgpu/agentData.glsl";
 import trailDataShader from "./shaders/gpgpu/trailData.glsl";
-import { SlimeMoldShaderMaterial } from "./SlimeMoldShaderMaterial";
 
-const uniformDefaults = {
-  growDistance: 40,
-  growSpeed: 0.9,
-  growSpeedSpread: 0.2,
-  fadeSpeed: 1.0,
-  fadeSpeedSpread: 3.0,
-};
+// const agentUniforms = {};
 
-const uniforms = {
-  growDistance: uniformDefaults.growDistance,
-  growSpeed: uniformDefaults.growSpeed,
-  growSpeedSpread: uniformDefaults.growSpeedSpread,
-  fadeSpeed: uniformDefaults.fadeSpeed,
-  fadeSpeedSpread: uniformDefaults.fadeSpeedSpread,
-};
+// const trailUniforms = {};
 
-export default function useGPGPU({
-  drawPlaneRef,
-}: {
-  drawPlaneRef: MutableRefObject<THREE.Mesh>;
-}) {
-  extend({ SlimeMoldShaderMaterial });
-
-  useControls({
-    growDistance: {
-      value: uniformDefaults.growDistance,
-      min: 1,
-      max: 50,
-      step: 1,
-      onChange: (value) => {
-        uniforms.growDistance = value;
-      },
-    },
-    growSpeed: {
-      value: uniformDefaults.growSpeed,
-      min: 0,
-      max: 5,
-      step: 0.01,
-      onChange: (value) => {
-        uniforms.growSpeed = value;
-      },
-    },
-    growSpeedSpread: {
-      value: uniformDefaults.growSpeedSpread,
-      min: 0,
-      max: 5,
-      step: 0.01,
-      onChange: (value) => {
-        uniforms.growSpeedSpread = value;
-      },
-    },
-    fadeSpeed: {
-      value: uniformDefaults.fadeSpeed,
-      min: 0,
-      max: 5,
-      step: 0.01,
-      onChange: (value) => {
-        uniforms.fadeSpeed = value;
-      },
-    },
-    fadeSpeedSpread: {
-      value: uniformDefaults.fadeSpeedSpread,
-      min: 0,
-      max: 5,
-      step: 0.01,
-      onChange: (value) => {
-        uniforms.fadeSpeedSpread = value;
-      },
-    },
-  });
+export default function useGPGPU() {
   const gl = useThree((state) => state.gl);
 
-  const drawTextureRef = useRef<THREE.Texture>();
+  const agentDataTextureRef = useRef<THREE.Texture>(null!);
+  const trailDataTextureRef = useRef<THREE.Texture>(null!);
 
   const gpgpu = useMemo(() => {
     const computation = new GPUComputationRenderer(WIDTH, HEIGHT, gl);
-    const drawTexture = computation.createTexture();
-    const drawTextureArray = drawTexture.image.data as Float32Array;
 
-    for (let i = 0; i < WIDTH * HEIGHT; i++) {
+    /**
+     * Just need position & angle; don't need an entire vector for direction.
+     * Don't try to fullscreen it for now, just have an orbitcontrols type
+     * setup that we've used in the intro to raymarching and portal scenes.
+     * So you can fix the plane to a specific size & not worry about people
+     * resizing the window. Oh, yeah, just like in the light grid scene.
+     */
+
+    const agentDataTexture = computation.createTexture();
+    const trailDataTexture = computation.createTexture();
+
+    const agentDataArray = agentDataTexture.image.data as Float32Array;
+    const trailDataArray = trailDataTexture.image.data as Float32Array;
+
+    const usedPoints = new Set<number>();
+
+    for (let i = 0; i < NUM_AGENTS; i++) {
       const i4 = i * 4;
-      drawTextureArray[i4 + 0] = 0.0;
-      drawTextureArray[i4 + 1] =
-        Math.random() * uniformDefaults.fadeSpeed +
-        uniformDefaults.fadeSpeedSpread;
-      drawTextureArray[i4 + 2] =
-        Math.random() * uniformDefaults.growSpeed +
-        uniformDefaults.growSpeedSpread;
-      drawTextureArray[i4 + 3] = 0.0;
+
+      const theta = Math.random() * Math.PI * 2;
+
+      while (usedPoints.size < i) {
+        const x = Math.floor(Math.random() * WIDTH);
+        const y = Math.floor(Math.random() * HEIGHT);
+        const i2 = y * WIDTH + x;
+        if (!usedPoints.has(i2)) {
+          agentDataArray[i4 + 0] = x / WIDTH;
+          agentDataArray[i4 + 1] = y / HEIGHT;
+          agentDataArray[i4 + 2] = theta;
+          agentDataArray[i4 + 3] = 0.0;
+
+          usedPoints.add(i2);
+          // break;
+        }
+      }
+      trailDataArray[i4 + 0] = 0.0;
+      trailDataArray[i4 + 1] = 0.0;
+      trailDataArray[i4 + 2] = 0.0;
+      trailDataArray[i4 + 3] = 0.0;
     }
 
-    const drawTextureVariable = computation.addVariable(
-      "drawTexture",
-      gpgpuShader,
-      drawTexture,
+    const agentDataTextureVariable = computation.addVariable(
+      "agentData",
+      agentDataShader,
+      agentDataTexture,
+    );
+    const trailDataTextureVariable = computation.addVariable(
+      "trailData",
+      trailDataShader,
+      trailDataTexture,
     );
 
-    computation.setVariableDependencies(drawTextureVariable, [
-      drawTextureVariable,
+    computation.setVariableDependencies(agentDataTextureVariable, [
+      agentDataTextureVariable,
+      trailDataTextureVariable,
+    ]);
+    computation.setVariableDependencies(trailDataTextureVariable, [
+      agentDataTextureVariable,
+      trailDataTextureVariable,
     ]);
 
-    drawTextureRef.current = drawTexture;
+    agentDataTextureRef.current = agentDataTexture;
+    trailDataTextureRef.current = trailDataTexture;
 
-    drawTextureVariable.material.uniforms.uDelta = new THREE.Uniform(0.0);
-    drawTextureVariable.material.uniforms.uMousePosition = new THREE.Uniform(
-      new THREE.Vector3(),
-    );
-    drawTextureVariable.material.uniforms.uMouseVelocity = new THREE.Uniform(
-      0.0,
-    );
-    drawTextureVariable.material.uniforms.uGrowDistance = new THREE.Uniform(
-      uniformDefaults.growDistance,
-    );
-    drawTextureVariable.material.uniforms.uGrowSpeed = new THREE.Uniform(
-      uniformDefaults.growSpeed,
-    );
-    drawTextureVariable.material.uniforms.uGrowSpeedSpread = new THREE.Uniform(
-      uniformDefaults.growSpeedSpread,
-    );
-    drawTextureVariable.material.uniforms.uFadeSpeed = new THREE.Uniform(
-      uniformDefaults.fadeSpeed,
-    );
-    drawTextureVariable.material.uniforms.uFadeSpeedSpread = new THREE.Uniform(
-      uniformDefaults.fadeSpeedSpread,
-    );
+    agentDataTextureVariable.material.uniforms.uTime = { value: 0.0 };
+    agentDataTextureVariable.material.uniforms.uDelta = { value: 0.0 };
+
+    trailDataTextureVariable.material.uniforms.uTime = {
+      value: 0.0,
+    };
+    trailDataTextureVariable.material.uniforms.uDelta = {
+      value: 0.0,
+    };
 
     return {
       computation,
-      drawTextureVariable,
+      agentDataTextureVariable,
+      trailDataTextureVariable,
     };
   }, [gl]);
 
@@ -147,52 +107,33 @@ export default function useGPGPU({
     }
   });
 
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
-  const mousePositionRef = useRef(new THREE.Vector3());
+  const uTimeRef = useRef(0);
 
-  useFrame(({ pointer, camera }, delta) => {
+  useFrame((_, delta) => {
     const uDelta = Math.min(delta, 0.1);
 
-    mouse.lerp(pointer, 0.1);
+    uTimeRef.current += delta;
 
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(drawPlaneRef.current);
+    gpgpu.agentDataTextureVariable.material.uniforms.uTime.value =
+      uTimeRef.current;
+    gpgpu.agentDataTextureVariable.material.uniforms.uDelta.value = uDelta;
 
-    if (intersects.length > 0) {
-      gpgpu.drawTextureVariable.material.uniforms.uMousePosition.value.copy(
-        intersects[0].uv,
-      );
-      if (intersects[0].uv) {
-        gpgpu.drawTextureVariable.material.uniforms.uMouseVelocity.value =
-          mousePositionRef.current.distanceTo(
-            new THREE.Vector3(intersects[0].uv.x, intersects[0].uv.y, 0),
-          );
-        mousePositionRef.current.x = intersects[0].uv.x;
-        mousePositionRef.current.y = intersects[0].uv.y;
-      }
-    }
-
-    gpgpu.drawTextureVariable.material.uniforms.uDelta.value = uDelta;
-    gpgpu.drawTextureVariable.material.uniforms.uGrowDistance.value =
-      uniforms.growDistance;
-    gpgpu.drawTextureVariable.material.uniforms.uGrowSpeed.value =
-      uniforms.growSpeed;
-    gpgpu.drawTextureVariable.material.uniforms.uGrowSpeedSpread.value =
-      uniforms.growSpeedSpread;
-    gpgpu.drawTextureVariable.material.uniforms.uFadeSpeed.value =
-      uniforms.fadeSpeed;
-    gpgpu.drawTextureVariable.material.uniforms.uFadeSpeedSpread.value =
-      uniforms.fadeSpeedSpread;
+    gpgpu.trailDataTextureVariable.material.uniforms.uTime.value =
+      uTimeRef.current;
+    gpgpu.trailDataTextureVariable.material.uniforms.uDelta.value = uDelta;
 
     gpgpu.computation.compute();
 
-    drawTextureRef.current = gpgpu.computation.getCurrentRenderTarget(
-      gpgpu.drawTextureVariable,
+    agentDataTextureRef.current = gpgpu.computation.getCurrentRenderTarget(
+      gpgpu.agentDataTextureVariable,
+    ).texture;
+    trailDataTextureRef.current = gpgpu.computation.getCurrentRenderTarget(
+      gpgpu.trailDataTextureVariable,
     ).texture;
   });
 
   return {
-    drawTexture: drawTextureRef,
+    agentDataTexture: agentDataTextureRef,
+    trailDataTexture: trailDataTextureRef,
   };
 }

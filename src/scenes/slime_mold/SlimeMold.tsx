@@ -20,7 +20,11 @@ export default function SlimeMold() {
 
   return (
     <Plane>
-      <slimeMoldShaderMaterial ref={shaderMaterialRef} uTime={0} />
+      <slimeMoldShaderMaterial
+        ref={shaderMaterialRef}
+        uTime={0}
+        uResolution={new THREE.Vector2(100, 100)}
+      />
     </Plane>
   );
 }
