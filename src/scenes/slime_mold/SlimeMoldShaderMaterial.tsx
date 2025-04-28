@@ -6,7 +6,9 @@ import vertexShader from "./shaders/slimeMold/slimeMold.vert";
 export const SlimeMoldShaderMaterial = shaderMaterial(
   {
     uTime: 0,
-    uResolution: new THREE.Vector2(100, 100),
+    uScreenResolution: new THREE.Vector2(100, 100),
+    uPlaneResolution: new THREE.Vector2(100, 100),
+    uGlPositionScale: 1.0,
   },
   vertexShader,
   fragmentShader,

@@ -31,7 +31,7 @@ export default function SlimeMoldScene() {
         style={{ background: backgroundColor }}
       >
         <Suspense fallback={null}>
-          <ambientLight color={"#fff"} intensity={0.5} />
+          <ambientLight color={"#fff"} intensity={1.0} />
           <SlimeMold />
           <Stats />
         </Suspense>
