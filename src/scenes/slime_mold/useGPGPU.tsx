@@ -1,12 +1,20 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { GPUComputationRenderer } from "three/examples/jsm/misc/GPUComputationRenderer.js";
-import { AGENT_DENSITY, HEIGHT, WIDTH } from "./consts";
+import { GPUComputationRenderer } from "./GPUComputationRenderer.js";
+import { HEIGHT, NUMBER_OF_AGENTS, WIDTH } from "./consts";
 import agentDataShader from "./shaders/gpgpu/agentData.glsl";
-import trailDataShader from "./shaders/gpgpu/trailData.glsl";
+import trailDataFragmentShader from "./shaders/gpgpu/trailData.frag";
+import trailDataVertexShader from "./shaders/gpgpu/trailData.vert";
 
-// const agentUniforms = {};
+const agentUniforms = {
+  uSensorAngle: new THREE.Uniform(Math.PI / 4),
+  uRotationAngle: new THREE.Uniform(Math.PI / 8),
+  uSensorOffset: new THREE.Uniform(9.0),
+  uSensorWidth: new THREE.Uniform(1.0),
+  uStepSize: new THREE.Uniform(1.0),
+  uDepositPerStep: new THREE.Uniform(0.05),
+};
 
 // const trailUniforms = {};
 
@@ -17,7 +25,6 @@ export default function useGPGPU() {
   const trailDataTextureRef = useRef<THREE.Texture>(null!);
 
   const gpgpu = useMemo(() => {
-    console.log("memoizing");
     const computation = new GPUComputationRenderer(WIDTH, HEIGHT, gl);
 
     const agentDataTexture = computation.createTexture();
@@ -28,23 +35,37 @@ export default function useGPGPU() {
 
     for (let i = 0; i < WIDTH * HEIGHT; i++) {
       const i4 = i * 4;
-
-      agentDataArray[i4 + 0] = 0.0;
-      agentDataArray[i4 + 1] = 0.0;
-      agentDataArray[i4 + 2] = 0.0;
-      agentDataArray[i4 + 3] = 1.0;
-
       trailDataArray[i4 + 0] = 0.0;
       trailDataArray[i4 + 1] = 0.0;
       trailDataArray[i4 + 2] = 0.0;
       trailDataArray[i4 + 3] = 1.0;
+    }
 
-      if (Math.random() < AGENT_DENSITY) {
-        agentDataArray[i4 + 0] = 1.0;
-        agentDataArray[i4 + 1] = Math.random();
+    const usedIndices = new Set<number>();
 
-        trailDataArray[i4 + 0] = 1.0;
+    for (let i = 0; i < NUMBER_OF_AGENTS; i++) {
+      let x;
+      let y;
+      let index;
+      while (true) {
+        x = Math.floor(Math.random() * WIDTH);
+        y = Math.floor(Math.random() * HEIGHT);
+        index = y * WIDTH + x;
+
+        if (!usedIndices.has(index)) {
+          usedIndices.add(index);
+          break;
+        }
       }
+      const i4 = i * 4;
+      const trailDataIndex = index * 4;
+
+      agentDataArray[i4 + 0] = x / WIDTH;
+      agentDataArray[i4 + 1] = y / HEIGHT;
+      agentDataArray[i4 + 2] = Math.random();
+      agentDataArray[i4 + 3] = 1.0;
+
+      trailDataArray[trailDataIndex + 0] = 1.0;
     }
 
     const agentDataTextureVariable = computation.addVariable(
@@ -54,8 +75,9 @@ export default function useGPGPU() {
     );
     const trailDataTextureVariable = computation.addVariable(
       "trailDataTexture",
-      trailDataShader,
+      trailDataFragmentShader,
       trailDataTexture,
+      trailDataVertexShader,
     );
 
     computation.setVariableDependencies(agentDataTextureVariable, [
@@ -70,15 +92,31 @@ export default function useGPGPU() {
     agentDataTextureRef.current = agentDataTexture;
     trailDataTextureRef.current = trailDataTexture;
 
-    agentDataTextureVariable.material.uniforms.uTime = { value: 0.0 };
-    agentDataTextureVariable.material.uniforms.uDelta = { value: 0.0 };
+    agentDataTextureVariable.material.uniforms.uTime = new THREE.Uniform(0.0);
+    agentDataTextureVariable.material.uniforms.uDelta = new THREE.Uniform(0.0);
+    agentDataTextureVariable.material.uniforms.uResolution = new THREE.Uniform(
+      new THREE.Vector2(WIDTH, HEIGHT),
+    );
+    agentDataTextureVariable.material.uniforms.uNumberOfAgents =
+      new THREE.Uniform(NUMBER_OF_AGENTS);
+    agentDataTextureVariable.material.uniforms.uSensorAngle =
+      agentUniforms.uSensorAngle;
+    agentDataTextureVariable.material.uniforms.uRotationAngle =
+      agentUniforms.uRotationAngle;
+    agentDataTextureVariable.material.uniforms.uSensorOffset =
+      agentUniforms.uSensorOffset;
+    agentDataTextureVariable.material.uniforms.uSensorWidth =
+      agentUniforms.uSensorWidth;
+    agentDataTextureVariable.material.uniforms.uStepSize =
+      agentUniforms.uStepSize;
+    agentDataTextureVariable.material.uniforms.uDepositPerStep =
+      agentUniforms.uDepositPerStep;
 
-    trailDataTextureVariable.material.uniforms.uTime = {
-      value: 0.0,
-    };
-    trailDataTextureVariable.material.uniforms.uDelta = {
-      value: 0.0,
-    };
+    trailDataTextureVariable.material.uniforms.uTime = new THREE.Uniform(0.0);
+    trailDataTextureVariable.material.uniforms.uDelta = new THREE.Uniform(0.0);
+    trailDataTextureVariable.material.uniforms.uResolution = new THREE.Uniform(
+      new THREE.Vector2(WIDTH, HEIGHT),
+    );
 
     return {
       computation,

@@ -1,13 +1,6 @@
-uniform float uTime;
-uniform float uDelta;
 uniform vec2 uResolution;
-uniform float uNumberOfAgents;
-uniform float uSensorAngle;
-uniform float uRotationAngle;
-uniform float uSensorOffset;
-uniform float uSensorWidth;
-uniform float uStepSize;
-uniform float uDepositPerStep;
+
+varying float foo;
 
 void main() {
     vec2 uv = gl_FragCoord.xy / uResolution;
@@ -15,7 +8,7 @@ void main() {
     float agentIndex = floor(uv.x * uResolution.x) + floor(uv.y * uResolution.y) * uResolution.x;
 
     if (agentIndex > uNumberOfAgents) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        gl_Position = vec4(9999.0, 9999.0, 9999.0, 1.0);
         return;
     }
 
@@ -27,8 +20,7 @@ void main() {
     // agentData.b = Agent direction in [0, 1)
     // agentData.a = Currently nothing
 
-    // trailData.r = 0.0 or 1.0 Agent at location?
-    // trailData.g = Chemoattractant concentration in [0, 1)
+    gl_PointSize = 1.0;
 
-    gl_FragColor = agentData;
+    gl_Position = vec4(agentData.x, agentData.y, position.z, 1.0);
 }
