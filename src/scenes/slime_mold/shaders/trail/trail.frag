@@ -7,11 +7,9 @@ uniform float uSensorWidth;
 uniform float uStepSize;
 uniform float uDepositPerStep;
 
-attribute vec2 vUv;
+attribute vec2 aAgentPosition;
 
 void main() {
-    vec4 agentData = texture2D(uAgentTexture, vUv);
-    vec4 trailData = texture2D(uTrailTexture, vUv);
 
-    gl_FragColor = vec4(agentData);
+    gl_FragColor = vec4(aAgentPosition, 0.0, 1.0);
 }

@@ -1,4 +1,5 @@
 import { ReactThreeFiber } from "@react-three/fiber";
+import { AgentMaterial } from "./AgentMaterial";
 import { SlimeMoldShaderMaterial } from "./SlimeMoldShaderMaterial";
 
 declare global {
@@ -8,6 +9,9 @@ declare global {
         slimeMoldShaderMaterial: ReactThreeFiber.Node<
           typeof SlimeMoldShaderMaterial &
             JSX.IntrinsicElements["dreiShaderMaterial"]
+        >;
+        agentMaterial: ReactThreeFiber.Node<
+          typeof AgentMaterial & JSX.IntrinsicElements["shaderMaterial"]
         >;
       }
     }
