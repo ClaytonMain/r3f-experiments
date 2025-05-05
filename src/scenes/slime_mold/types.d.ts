@@ -1,17 +1,16 @@
 import { ReactThreeFiber } from "@react-three/fiber";
 import { AgentMaterial } from "./AgentMaterial";
-import { SlimeMoldShaderMaterial } from "./SlimeMoldShaderMaterial";
+import { TrailMaterial } from "./TrailMaterial";
 
 declare global {
   namespace React {
     namespace JSX {
       interface IntrinsicElements {
-        slimeMoldShaderMaterial: ReactThreeFiber.Node<
-          typeof SlimeMoldShaderMaterial &
-            JSX.IntrinsicElements["dreiShaderMaterial"]
-        >;
         agentMaterial: ReactThreeFiber.Node<
           typeof AgentMaterial & JSX.IntrinsicElements["shaderMaterial"]
+        >;
+        trailMaterial: ReactThreeFiber.Node<
+          typeof TrailMaterial & JSX.IntrinsicElements["shaderMaterial"]
         >;
       }
     }

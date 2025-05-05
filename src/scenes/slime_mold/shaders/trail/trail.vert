@@ -1,18 +1,17 @@
-uniform sampler2D uAgentPositions;
-uniform float uTime;
+uniform sampler2D uAgentTexture;
 
-attribute vec2 aAgentPosition;
+varying vec2 vAgentPosition;
 
 void main() {
-    vec3 agentPosition = texture2D(uAgentPositions, position.xy).xyz;
+    vec3 agentPosition = texture2D(uAgentTexture, position.xy).xyz;
 
-    aAgentPosition = vec2(agentPosition.x, agentPosition.y);
+    vAgentPosition = vec2(agentPosition.x, agentPosition.y);
 
     vec4 modelPosition = modelMatrix * vec4(agentPosition, 1.0);
     vec4 viewPosition = viewMatrix * modelPosition;
     vec4 projectedPosition = projectionMatrix * viewPosition;
 
-    gl_Position = projectedPosition;
+    gl_Position = vec4(agentPosition, 1.0);
 
     gl_PointSize = 1.0;
 }

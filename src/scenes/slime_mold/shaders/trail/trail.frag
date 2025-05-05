@@ -1,15 +1,12 @@
 uniform sampler2D uAgentTexture;
 uniform sampler2D uTrailTexture;
-uniform float uSensorAngle;
-uniform float uRotationAngle;
-uniform float uSensorOffset;
-uniform float uSensorWidth;
-uniform float uStepSize;
-uniform float uDepositPerStep;
+uniform vec2 uDisplayTextureResolution;
+uniform float uDepositRate;
+uniform int uInitialized;
 
-attribute vec2 aAgentPosition;
+varying vec2 vAgentPosition;
 
 void main() {
 
-    gl_FragColor = vec4(aAgentPosition, 0.0, 1.0);
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 }

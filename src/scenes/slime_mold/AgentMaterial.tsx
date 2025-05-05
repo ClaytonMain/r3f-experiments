@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { DEFAULT_AGENT_UNIFORMS } from "./consts";
 import fragmentShader from "./shaders/agent/agent.frag";
 import vertexShader from "./shaders/agent/agent.vert";
 
@@ -26,14 +27,8 @@ class AgentMaterial extends THREE.ShaderMaterial {
     agentTexture.needsUpdate = true;
 
     const agentUniforms = {
+      ...DEFAULT_AGENT_UNIFORMS,
       uAgentTexture: { value: agentTexture },
-      uTrailTexture: { value: null },
-      uSensorAngle: { value: Math.PI / 4 },
-      uRotationAngle: { value: Math.PI / 8 },
-      uSensorOffset: { value: 9.0 },
-      uSensorWidth: { value: 1.0 },
-      uStepSize: { value: 1.0 },
-      uDepositPerStep: { value: 0.05 },
     };
 
     super({
