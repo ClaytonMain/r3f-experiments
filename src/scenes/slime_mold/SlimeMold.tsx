@@ -47,10 +47,10 @@ function FBOSlimeMold() {
   );
   const trailScene = new THREE.Scene();
   const trailCamera = new THREE.OrthographicCamera(
-    -1,
-    1,
-    1,
-    -1,
+    -DISPLAY_TEXTURE_WIDTH / 2,
+    DISPLAY_TEXTURE_WIDTH / 2,
+    DISPLAY_TEXTURE_HEIGHT / 2,
+    -DISPLAY_TEXTURE_HEIGHT / 2,
     1 / Math.pow(2, 53),
     1,
   );
@@ -81,7 +81,6 @@ function FBOSlimeMold() {
 
   const trailPositionsAttribute = useMemo(() => {
     const length = GPU_TEXTURE_WIDTH * GPU_TEXTURE_HEIGHT;
-    // Does this need to be length * 3?
     const attributes = new Float32Array(length * 3);
     for (let i = 0; i < length; i++) {
       const i3 = i * 3;
@@ -104,26 +103,32 @@ function FBOSlimeMold() {
 
   const initializedRef = useRef(false);
 
-  useFrame(({ gl }) => {
+  useFrame(({ gl, clock }) => {
     gl.setRenderTarget(agentRenderTarget);
     gl.clear();
     gl.render(agentScene, agentCamera);
     gl.setRenderTarget(null);
 
-    // agentMaterialRef.current!.uniforms.uAgentTexture.value =
-    //   agentRenderTarget.texture.clone();
-    trailMaterialRef.current!.uniforms.uAgentTexture.value =
-      agentRenderTarget.texture.clone();
+    if (initializedRef.current) {
+      // agentMaterialRef.current!.uniforms.uAgentTexture.value =
+      //   agentRenderTarget.texture.clone();
+      trailMaterialRef.current!.uniforms.uAgentTexture.value =
+        agentRenderTarget.texture.clone();
+    }
 
     gl.setRenderTarget(trailRenderTarget);
     gl.clear();
     gl.render(trailScene, trailCamera);
     gl.setRenderTarget(null);
 
-    agentMaterialRef.current!.uniforms.uTrailTexture.value =
-      trailRenderTarget.texture.clone();
-    trailMaterialRef.current!.uniforms.uTrailTexture.value =
-      trailRenderTarget.texture.clone();
+    if (initializedRef.current) {
+      agentMaterialRef.current!.uniforms.uTrailTexture.value =
+        trailRenderTarget.texture.clone();
+      // trailMaterialRef.current!.uniforms.uTrailTexture.value =
+      //   trailRenderTarget.texture.clone();
+    }
+
+    agentMaterialRef.current!.uniforms.uTime.value = clock.getElapsedTime();
 
     // gl.setRenderTarget(null);
 
@@ -171,7 +176,7 @@ function FBOSlimeMold() {
         agentScene,
       )}
       {createPortal(
-        <mesh>
+        <points>
           <trailMaterial
             ref={trailMaterialRef}
             args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
@@ -185,7 +190,7 @@ function FBOSlimeMold() {
               itemSize={3}
             />
           </bufferGeometry>
-        </mesh>,
+        </points>,
         trailScene,
       )}
       <Plane ref={agentDisplayPlaneRef}>

@@ -17,6 +17,7 @@ export const DEFAULT_AGENT_UNIFORMS = {
   uSensorOffset: { value: 9.0 },
   uSensorWidth: { value: 1.0 },
   uStepSize: { value: 1.0 },
+  uTime: { value: 0.0 },
   uInitialized: { value: 0 },
 };
 

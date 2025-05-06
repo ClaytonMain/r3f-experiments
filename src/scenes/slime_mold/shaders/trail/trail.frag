@@ -7,6 +7,11 @@ uniform int uInitialized;
 varying vec2 vAgentPosition;
 
 void main() {
+    if (uInitialized == 0) {
+        return;
+    }
 
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 trailData = texture2D(uTrailTexture, vAgentPosition);
+
+    gl_FragColor = vec4(1.0);
 }
