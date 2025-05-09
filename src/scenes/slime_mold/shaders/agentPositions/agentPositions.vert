@@ -1,11 +1,15 @@
-uniform sampler2D uAgentTexture;
+uniform sampler2D uAgentDataTexture;
 uniform vec2 uDisplayTextureResolution;
 
 varying vec2 vAgentPosition;
+varying vec2 vPosition;
 
 void main() {
-    vec3 agentPosition = vec3(texture2D(uAgentTexture, position.xy).xy, 0.0);
-    // agentPosition.xy *= uDisplayTextureResolution;
+    vPosition = position.xy;
+
+    vec3 agentPosition = vec3(texture2D(uAgentDataTexture, position.xy).xy, 0.0);
+
+    agentPosition.xy *= uDisplayTextureResolution;
 
     vAgentPosition = vec2(agentPosition.x, agentPosition.y);
 

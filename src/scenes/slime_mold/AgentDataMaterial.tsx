@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { DEFAULT_AGENT_UNIFORMS } from "./consts";
-import fragmentShader from "./shaders/agent/agent.frag";
-import vertexShader from "./shaders/agent/agent.vert";
+import { DEFAULT_AGENT_DATA_UNIFORMS } from "./consts";
+import fragmentShader from "./shaders/agentData/agentData.frag";
+import vertexShader from "./shaders/agentData/agentData.vert";
 
 function getData(width: number, height: number) {
   const data = new Float32Array(width * height * 4);
@@ -15,28 +15,28 @@ function getData(width: number, height: number) {
   return data;
 }
 
-class AgentMaterial extends THREE.ShaderMaterial {
+class AgentDataMaterial extends THREE.ShaderMaterial {
   constructor(width: number, height: number) {
-    const agentTexture = new THREE.DataTexture(
+    const agentDataTexture = new THREE.DataTexture(
       getData(width, height),
       width,
       height,
       THREE.RGBAFormat,
       THREE.FloatType,
     );
-    agentTexture.needsUpdate = true;
+    agentDataTexture.needsUpdate = true;
 
-    const agentUniforms = {
-      ...DEFAULT_AGENT_UNIFORMS,
-      uAgentTexture: { value: agentTexture },
+    const agentDataUniforms = {
+      ...DEFAULT_AGENT_DATA_UNIFORMS,
+      uAgentDataTexture: { value: agentDataTexture },
     };
 
     super({
-      uniforms: agentUniforms,
+      uniforms: agentDataUniforms,
       vertexShader,
       fragmentShader,
     });
   }
 }
 
-export default AgentMaterial;
+export default AgentDataMaterial;
