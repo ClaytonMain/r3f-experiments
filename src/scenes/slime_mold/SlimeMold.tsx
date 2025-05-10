@@ -33,6 +33,7 @@ const trailDisplayUniforms = {
     new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   ),
   uGlPositionScale: new THREE.Uniform(1),
+  uAgentPositionsTexture: new THREE.Uniform(null),
 };
 
 function FBOSlimeMold() {
@@ -42,7 +43,7 @@ function FBOSlimeMold() {
   const agentDataMaterialRefB = useRef<AgentDataMaterial>(null);
   const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null);
 
-  const trailPlaneRef = useRef<THREE.Mesh>(null);
+  const trailPlaneMaterialRef = useRef<THREE.ShaderMaterial>(null);
 
   const agentDataDisplayPlaneOneRef = useRef<THREE.Mesh>(null);
   const agentDataDisplayPlaneTwoRef = useRef<THREE.Mesh>(null);
@@ -122,10 +123,10 @@ function FBOSlimeMold() {
   }, [viewport]);
 
   useEffect(() => {
-    if (trailPlaneRef.current) {
-      trailPlaneRef.current.material.uniforms.uScreenResolution.value =
+    if (trailPlaneMaterialRef.current) {
+      trailPlaneMaterialRef.current.uniforms.uScreenResolution.value =
         new THREE.Vector2(window.innerWidth, window.innerHeight);
-      trailPlaneRef.current.material.uniforms.uGlPositionScale.value = Math.min(
+      trailPlaneMaterialRef.current.uniforms.uGlPositionScale.value = Math.min(
         window.innerWidth / DISPLAY_TEXTURE_WIDTH,
         window.innerHeight / DISPLAY_TEXTURE_HEIGHT,
       );
@@ -171,6 +172,9 @@ function FBOSlimeMold() {
     gl.clear();
     gl.render(agentPositionsScene, agentPositionsCamera);
     gl.setRenderTarget(null);
+
+    trailPlaneMaterialRef.current!.uniforms.uAgentPositionsTexture.value =
+      agentPositionsRenderTarget.texture;
 
     if (agentDataDisplayPlaneOneRef.current) {
       // @ts-expect-error `map` does exist.
@@ -261,8 +265,9 @@ function FBOSlimeMold() {
         </points>,
         agentPositionsScene,
       )}
-      <Plane ref={trailPlaneRef}>
+      <Plane>
         <shaderMaterial
+          ref={trailPlaneMaterialRef}
           uniforms={trailDisplayUniforms}
           vertexShader={trailDisplayVertexShader}
           fragmentShader={trailDisplayFragmentShader}

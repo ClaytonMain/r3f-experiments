@@ -1,13 +1,16 @@
 uniform float uTime;
 uniform vec2 uScreenResolution;
 uniform vec2 uPlaneResolution;
+uniform sampler2D uAgentPositionsTexture;
 varying vec2 vUv;
 
 void main() {
-    vec2 uv = vUv * uPlaneResolution / uPlaneResolution.y;
+    vec2 uv = vUv;
 
-    gl_FragColor = vec4(uv.xy, 0.0, 1.0);
-    if (mod(uv.x, 0.1) < 0.003 || mod(uv.y, 0.1) < 0.003) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    }
+    vec4 agentPositionData = texture2D(uAgentPositionsTexture, uv);
+
+    int i;
+    float neighboringIntensities = 0.0;
+
+    gl_FragColor = vec4(agentPositionData.x, 0.0, 0.0, 1.0);
 }
