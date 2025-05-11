@@ -1,19 +1,21 @@
 import { Plane, useFBO } from "@react-three/drei";
 import { createPortal, extend, useFrame, useThree } from "@react-three/fiber";
+import { useControls } from "leva";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import AgentDataMaterial from "./AgentDataMaterial";
 import AgentPositionsMaterial from "./AgentPositionsMaterial";
+import TrailMaterial from "./TrailMaterial";
 import {
+  DEFAULT_AGENT_DATA_UNIFORMS,
+  DEFAULT_TRAIL_UNIFORMS,
   DISPLAY_TEXTURE_HEIGHT,
   DISPLAY_TEXTURE_WIDTH,
   GPU_TEXTURE_HEIGHT,
   GPU_TEXTURE_WIDTH,
 } from "./consts";
-import trailDisplayFragmentShader from "./shaders/trailDisplay/trailDisplay.frag";
-import trailDisplayVertexShader from "./shaders/trailDisplay/trailDisplay.vert";
 
-extend({ AgentDataMaterial, AgentPositionsMaterial });
+extend({ AgentDataMaterial, AgentPositionsMaterial, TrailMaterial });
 
 // Credit to Maxime Heckel for their layout described in this blog post
 // upon which this file is based:
@@ -27,31 +29,109 @@ const texturePlaneUniforms = {
   uShowTexture: new THREE.Uniform(1),
 };
 
-const trailDisplayUniforms = {
-  uScreenResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
-  uPlaneResolution: new THREE.Uniform(
+const slimeMoldDisplayPlaneUniforms = {
+  uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
+  uDisplayTextureResolution: new THREE.Uniform(
     new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   ),
   uGlPositionScale: new THREE.Uniform(1),
-  uAgentPositionsTexture: new THREE.Uniform(null),
 };
 
 function FBOSlimeMold() {
+  useControls("Slime Mold", {
+    slimeMold_uSensorAngle: {
+      label: "Sensor Angle",
+      value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorAngle.value,
+      min: 0,
+      max: Math.PI,
+      onChange: (value) => {
+        agentDataMaterialRefA.current!.uniforms.uSensorAngle.value = value;
+        agentDataMaterialRefB.current!.uniforms.uSensorAngle.value = value;
+      },
+    },
+    slimeMold_uRotationAngle: {
+      label: "Rotation Angle",
+      value: DEFAULT_AGENT_DATA_UNIFORMS.uRotationAngle.value,
+      min: 0,
+      max: Math.PI,
+      onChange: (value) => {
+        agentDataMaterialRefA.current!.uniforms.uRotationAngle.value = value;
+        agentDataMaterialRefB.current!.uniforms.uRotationAngle.value = value;
+      },
+    },
+    slimeMold_uSensorOffset: {
+      label: "Sensor Offset",
+      value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorOffset.value,
+      min: 0,
+      max: 20,
+      onChange: (value) => {
+        agentDataMaterialRefA.current!.uniforms.uSensorOffset.value = value;
+        agentDataMaterialRefB.current!.uniforms.uSensorOffset.value = value;
+      },
+    },
+    slimeMold_uSensorWidth: {
+      label: "Sensor Width",
+      value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorWidth.value,
+      min: 0,
+      max: 10,
+      onChange: (value) => {
+        agentDataMaterialRefA.current!.uniforms.uSensorWidth.value = value;
+        agentDataMaterialRefB.current!.uniforms.uSensorWidth.value = value;
+      },
+    },
+    slimeMold_uStepSize: {
+      label: "Step Size",
+      value: DEFAULT_AGENT_DATA_UNIFORMS.uStepSize.value,
+      min: 0,
+      max: 10,
+      onChange: (value) => {
+        agentDataMaterialRefA.current!.uniforms.uStepSize.value = value;
+        agentDataMaterialRefB.current!.uniforms.uStepSize.value = value;
+      },
+    },
+    slimeMold_uDecayRate: {
+      label: "Decay Rate",
+      value: DEFAULT_TRAIL_UNIFORMS.uDecayRate.value,
+      min: 0,
+      max: 1,
+      onChange: (value) => {
+        trailMaterialRefA.current!.uniforms.uDecayRate.value = value;
+        trailMaterialRefB.current!.uniforms.uDecayRate.value = value;
+      },
+    },
+    slimeMold_uDepositRate: {
+      label: "Deposit Rate",
+      value: DEFAULT_TRAIL_UNIFORMS.uDepositRate.value,
+      min: 0,
+      max: 1,
+      onChange: (value) => {
+        trailMaterialRefA.current!.uniforms.uDepositRate.value = value;
+        trailMaterialRefB.current!.uniforms.uDepositRate.value = value;
+      },
+    },
+  });
+
   const viewport = useThree((state) => state.viewport);
 
   const agentDataMaterialRefA = useRef<AgentDataMaterial>(null);
   const agentDataMaterialRefB = useRef<AgentDataMaterial>(null);
   const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null);
+  const trailMaterialRefA = useRef<TrailMaterial>(null);
+  const trailMaterialRefB = useRef<TrailMaterial>(null);
 
-  const trailPlaneMaterialRef = useRef<THREE.ShaderMaterial>(null);
-
-  const agentDataDisplayPlaneOneRef = useRef<THREE.Mesh>(null);
-  const agentDataDisplayPlaneTwoRef = useRef<THREE.Mesh>(null);
+  const agentDataDisplayPlaneRef = useRef<THREE.Mesh>(null);
   const agentPositionsDisplayPlaneRef = useRef<THREE.Mesh>(null);
+  const trailDisplayPlaneRef = useRef<THREE.Mesh>(null);
+
+  const slimeMoldDisplayPlaneRef = useRef<THREE.Mesh>(null);
 
   const agentDataSceneA = new THREE.Scene();
   const agentDataSceneB = new THREE.Scene();
-  const agentDataCamera = new THREE.OrthographicCamera(
+  const agentPositionsScene = new THREE.Scene();
+  const trailSceneA = new THREE.Scene();
+  const trailSceneB = new THREE.Scene();
+
+  const cameraA = new THREE.OrthographicCamera(
     -1,
     1,
     1,
@@ -59,8 +139,7 @@ function FBOSlimeMold() {
     1 / Math.pow(2, 53),
     1,
   );
-  const agentPositionsScene = new THREE.Scene();
-  const agentPositionsCamera = new THREE.OrthographicCamera(
+  const cameraB = new THREE.OrthographicCamera(
     0,
     DISPLAY_TEXTURE_WIDTH,
     DISPLAY_TEXTURE_HEIGHT,
@@ -69,10 +148,10 @@ function FBOSlimeMold() {
     1,
   );
 
-  const positions = new Float32Array([
+  const renderPlanePositions = new Float32Array([
     -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0,
   ]);
-  const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]);
+  const renderPlaneUvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]);
 
   const agentDataRenderTargetA = useFBO(GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT, {
     minFilter: THREE.NearestFilter,
@@ -89,6 +168,28 @@ function FBOSlimeMold() {
     type: THREE.FloatType,
   });
   const agentPositionsRenderTarget = useFBO(
+    DISPLAY_TEXTURE_WIDTH,
+    DISPLAY_TEXTURE_HEIGHT,
+    {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false,
+      type: THREE.FloatType,
+    },
+  );
+  const trailRenderTargetA = useFBO(
+    DISPLAY_TEXTURE_WIDTH,
+    DISPLAY_TEXTURE_HEIGHT,
+    {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      format: THREE.RGBAFormat,
+      stencilBuffer: false,
+      type: THREE.FloatType,
+    },
+  );
+  const trailRenderTargetB = useFBO(
     DISPLAY_TEXTURE_WIDTH,
     DISPLAY_TEXTURE_HEIGHT,
     {
@@ -123,14 +224,14 @@ function FBOSlimeMold() {
   }, [viewport]);
 
   useEffect(() => {
-    if (trailPlaneMaterialRef.current) {
-      trailPlaneMaterialRef.current.uniforms.uScreenResolution.value =
-        new THREE.Vector2(window.innerWidth, window.innerHeight);
-      trailPlaneMaterialRef.current.uniforms.uGlPositionScale.value = Math.min(
-        window.innerWidth / DISPLAY_TEXTURE_WIDTH,
-        window.innerHeight / DISPLAY_TEXTURE_HEIGHT,
-      );
-    }
+    slimeMoldDisplayPlaneUniforms.uResolution.value = new THREE.Vector2(
+      window.innerWidth,
+      window.innerHeight,
+    );
+    slimeMoldDisplayPlaneUniforms.uGlPositionScale.value = Math.min(
+      window.innerWidth / DISPLAY_TEXTURE_WIDTH,
+      window.innerHeight / DISPLAY_TEXTURE_HEIGHT,
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.innerWidth, window.innerHeight]);
 
@@ -144,7 +245,7 @@ function FBOSlimeMold() {
 
       gl.setRenderTarget(agentDataRenderTargetA);
       gl.clear();
-      gl.render(agentDataSceneA, agentDataCamera);
+      gl.render(agentDataSceneA, cameraA);
       gl.setRenderTarget(null);
 
       agentDataMaterialRefB.current!.uniforms.uAgentDataTexture.value =
@@ -157,7 +258,7 @@ function FBOSlimeMold() {
 
       gl.setRenderTarget(agentDataRenderTargetB);
       gl.clear();
-      gl.render(agentDataSceneB, agentDataCamera);
+      gl.render(agentDataSceneB, cameraA);
       gl.setRenderTarget(null);
 
       agentDataMaterialRefA.current!.uniforms.uAgentDataTexture.value =
@@ -166,32 +267,68 @@ function FBOSlimeMold() {
         agentDataRenderTargetB.texture;
     }
 
-    pingPongRef.current = !pingPongRef.current;
-
     gl.setRenderTarget(agentPositionsRenderTarget);
     gl.clear();
-    gl.render(agentPositionsScene, agentPositionsCamera);
+    gl.render(agentPositionsScene, cameraB);
     gl.setRenderTarget(null);
 
-    trailPlaneMaterialRef.current!.uniforms.uAgentPositionsTexture.value =
-      agentPositionsRenderTarget.texture;
-
-    if (agentDataDisplayPlaneOneRef.current) {
-      // @ts-expect-error `map` does exist.
-      agentDataDisplayPlaneOneRef.current.material.map =
-        agentDataRenderTargetA.texture;
+    if (pingPongRef.current) {
+      agentDataMaterialRefB.current!.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
+    } else {
+      agentDataMaterialRefA.current!.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
     }
-    if (agentDataDisplayPlaneTwoRef.current) {
+
+    if (pingPongRef.current) {
+      trailMaterialRefA.current!.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
+
+      gl.setRenderTarget(trailRenderTargetA);
+      gl.clear();
+      gl.render(trailSceneA, cameraA);
+      gl.setRenderTarget(null);
+
+      trailMaterialRefB.current!.uniforms.uTrailTexture.value =
+        trailRenderTargetA.texture;
+      agentDataMaterialRefB.current!.uniforms.uTrailTexture.value =
+        trailRenderTargetA.texture;
+    } else {
+      trailMaterialRefB.current!.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
+
+      gl.setRenderTarget(trailRenderTargetB);
+      gl.clear();
+      gl.render(trailSceneB, cameraA);
+      gl.setRenderTarget(null);
+
+      trailMaterialRefA.current!.uniforms.uTrailTexture.value =
+        trailRenderTargetB.texture;
+      agentDataMaterialRefA.current!.uniforms.uTrailTexture.value =
+        trailRenderTargetB.texture;
+    }
+
+    if (slimeMoldDisplayPlaneRef.current) {
       // @ts-expect-error `map` does exist.
-      agentDataDisplayPlaneTwoRef.current.material.map =
-        agentDataRenderTargetB.texture;
+      slimeMoldDisplayPlaneRef.current.material.map =
+        trailRenderTargetA.texture;
+    }
+    if (agentDataDisplayPlaneRef.current) {
+      // @ts-expect-error `map` does exist.
+      agentDataDisplayPlaneRef.current.material.map =
+        agentDataRenderTargetA.texture;
     }
     if (agentPositionsDisplayPlaneRef.current) {
       // @ts-expect-error `map` does exist.
       agentPositionsDisplayPlaneRef.current.material.map =
         agentPositionsRenderTarget.texture;
     }
+    if (trailDisplayPlaneRef.current) {
+      // @ts-expect-error `map` does exist.
+      trailDisplayPlaneRef.current.material.map = trailRenderTargetA.texture;
+    }
 
+    pingPongRef.current = !pingPongRef.current;
     frameCountRef.current++;
   });
 
@@ -205,17 +342,17 @@ function FBOSlimeMold() {
           />
           <bufferGeometry>
             <bufferAttribute
-              args={[positions, 3]}
+              args={[renderPlanePositions, 3]}
               attach="attributes-position"
-              array={positions}
-              count={positions.length / 3}
+              array={renderPlanePositions}
+              count={renderPlanePositions.length / 3}
               itemSize={3}
             />
             <bufferAttribute
-              args={[uvs, 2]}
+              args={[renderPlaneUvs, 2]}
               attach="attributes-uv"
-              array={uvs}
-              count={uvs.length / 2}
+              array={renderPlaneUvs}
+              count={renderPlaneUvs.length / 2}
               itemSize={2}
             />
           </bufferGeometry>
@@ -230,17 +367,17 @@ function FBOSlimeMold() {
           />
           <bufferGeometry>
             <bufferAttribute
-              args={[positions, 3]}
+              args={[renderPlanePositions, 3]}
               attach="attributes-position"
-              array={positions}
-              count={positions.length / 3}
+              array={renderPlanePositions}
+              count={renderPlanePositions.length / 3}
               itemSize={3}
             />
             <bufferAttribute
-              args={[uvs, 2]}
+              args={[renderPlaneUvs, 2]}
               attach="attributes-uv"
-              array={uvs}
-              count={uvs.length / 2}
+              array={renderPlaneUvs}
+              count={renderPlaneUvs.length / 2}
               itemSize={2}
             />
           </bufferGeometry>
@@ -265,18 +402,90 @@ function FBOSlimeMold() {
         </points>,
         agentPositionsScene,
       )}
-      <Plane>
-        <shaderMaterial
-          ref={trailPlaneMaterialRef}
-          uniforms={trailDisplayUniforms}
-          vertexShader={trailDisplayVertexShader}
-          fragmentShader={trailDisplayFragmentShader}
+      {createPortal(
+        <mesh>
+          <trailMaterial
+            ref={trailMaterialRefA}
+            args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
+          />
+          <bufferGeometry>
+            <bufferAttribute
+              args={[renderPlanePositions, 3]}
+              attach="attributes-position"
+              array={renderPlanePositions}
+              count={renderPlanePositions.length / 3}
+              itemSize={3}
+            />
+            <bufferAttribute
+              args={[renderPlaneUvs, 2]}
+              attach="attributes-uv"
+              array={renderPlaneUvs}
+              count={renderPlaneUvs.length / 2}
+              itemSize={2}
+            />
+          </bufferGeometry>
+        </mesh>,
+        trailSceneA,
+      )}
+      {createPortal(
+        <mesh>
+          <trailMaterial
+            ref={trailMaterialRefB}
+            args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
+          />
+          <bufferGeometry>
+            <bufferAttribute
+              args={[renderPlanePositions, 3]}
+              attach="attributes-position"
+              array={renderPlanePositions}
+              count={renderPlanePositions.length / 3}
+              itemSize={3}
+            />
+            <bufferAttribute
+              args={[renderPlaneUvs, 2]}
+              attach="attributes-uv"
+              array={renderPlaneUvs}
+              count={renderPlaneUvs.length / 2}
+              itemSize={2}
+            />
+          </bufferGeometry>
+        </mesh>,
+        trailSceneB,
+      )}
+      <Plane ref={slimeMoldDisplayPlaneRef}>
+        <meshBasicMaterial
+          attach="material"
+          map={trailRenderTargetA.texture}
           depthTest={false}
           depthWrite={false}
-          transparent
+          onBeforeCompile={(shader) => {
+            shader.uniforms.uResolution =
+              slimeMoldDisplayPlaneUniforms.uResolution;
+            shader.uniforms.uDisplayTextureResolution =
+              slimeMoldDisplayPlaneUniforms.uDisplayTextureResolution;
+            shader.uniforms.uGlPositionScale =
+              slimeMoldDisplayPlaneUniforms.uGlPositionScale;
+            shader.vertexShader = shader.vertexShader.replace(
+              "#include <common>",
+              /* glsl */ `
+              #include <common>
+              uniform vec2 uResolution;
+              uniform vec2 uDisplayTextureResolution;
+              uniform float uGlPositionScale;
+              `,
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+              "#include <project_vertex>",
+              /* glsl */ `
+              #include <project_vertex>
+              gl_Position = vec4(position, 1.0) * vec4(uResolution.y / uResolution.x * uDisplayTextureResolution.x / uDisplayTextureResolution.y, 1.0, 1.0, 1.0);
+              gl_Position.xy *= uGlPositionScale * 3.5;
+              `,
+            );
+          }}
         />
       </Plane>
-      <Plane ref={agentDataDisplayPlaneOneRef}>
+      <Plane ref={agentDataDisplayPlaneRef}>
         <meshBasicMaterial
           attach="material"
           map={agentDataRenderTargetA.texture}
@@ -304,10 +513,10 @@ function FBOSlimeMold() {
           }}
         />
       </Plane>
-      <Plane ref={agentDataDisplayPlaneTwoRef}>
+      <Plane ref={agentPositionsDisplayPlaneRef}>
         <meshBasicMaterial
           attach="material"
-          map={agentDataRenderTargetB.texture}
+          map={agentPositionsRenderTarget.texture}
           depthTest={false}
           depthWrite={false}
           onBeforeCompile={(shader) => {
@@ -332,10 +541,11 @@ function FBOSlimeMold() {
           }}
         />
       </Plane>
-      <Plane ref={agentPositionsDisplayPlaneRef}>
+
+      <Plane ref={trailDisplayPlaneRef}>
         <meshBasicMaterial
           attach="material"
-          map={agentPositionsRenderTarget.texture}
+          map={trailRenderTargetA.texture}
           depthTest={false}
           depthWrite={false}
           onBeforeCompile={(shader) => {
