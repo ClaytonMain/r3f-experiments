@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
-export const GPU_TEXTURE_WIDTH = 256;
-export const GPU_TEXTURE_HEIGHT = 256;
+export const GPU_TEXTURE_WIDTH = 512;
+export const GPU_TEXTURE_HEIGHT = 512;
 
 export const DISPLAY_TEXTURE_WIDTH = 3840;
 export const DISPLAY_TEXTURE_HEIGHT = 2160;

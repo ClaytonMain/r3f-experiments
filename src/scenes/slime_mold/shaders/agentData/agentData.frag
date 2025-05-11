@@ -64,7 +64,7 @@ void main() {
         agentTrailUv = newAgentTrailUv;
     } else {
         // Otherwise, randomize the direction.
-        agentDirectionAngle = random(vUv + uTime) * PI2;
+        agentDirectionAngle = 2.0 * uRotationAngle * round(random(vUv + uTime)) * 2.0 - 1.0;
     }
 
     // Sensory stage.
