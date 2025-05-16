@@ -1,10 +1,62 @@
 import * as THREE from "three";
 
-export const GPU_TEXTURE_WIDTH = 512;
-export const GPU_TEXTURE_HEIGHT = 512;
+export const GPU_TEXTURE_WIDTH = 1024;
+export const GPU_TEXTURE_HEIGHT = 1024;
 
-export const DISPLAY_TEXTURE_WIDTH = 3840;
-export const DISPLAY_TEXTURE_HEIGHT = 2160;
+export const DISPLAY_TEXTURE_WIDTH = 1920;
+export const DISPLAY_TEXTURE_HEIGHT = 1080;
+
+// export const GPU_TEXTURE_WIDTH = 16;
+// export const GPU_TEXTURE_HEIGHT = 16;
+
+// export const DISPLAY_TEXTURE_WIDTH = 320;
+// export const DISPLAY_TEXTURE_HEIGHT = 180;
+
+export const DEFAULT_SHARED_UNIFORMS = {
+  uBoundaryBehavior: { value: 1 }, // 0 = wrap, 1 = bounce
+};
+
+export const DEFAULT_SIMULATION_SPEED = 1.7;
+
+// export const DEFAULT_AGENT_DATA_UNIFORMS = {
+//   uAgentDataTexture: { value: null },
+//   uAgentPositionsTexture: { value: null },
+//   uTrailTexture: { value: null },
+//   uDisplayTextureResolution: {
+//     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+//   },
+//   uSensorAngle: { value: 0.43 },
+//   uRotationRate: { value: 1.08 },
+//   uSensorOffset: { value: 7.2 },
+//   uSensorWidth: { value: 1.5 },
+//   uStepSize: { value: 50.0 },
+//   uCrowdAvoidance: { value: 0.05 },
+//   uWanderStrength: { value: 0.2 },
+//   uSensorSampleLevel: { value: 2 },
+//   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
+//   uTime: { value: 0.0 },
+//   uDelta: { value: 0.0 },
+// };
+
+// export const DEFAULT_AGENT_DATA_UNIFORMS = {
+//   uAgentDataTexture: { value: null },
+//   uAgentPositionsTexture: { value: null },
+//   uTrailTexture: { value: null },
+//   uDisplayTextureResolution: {
+//     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+//   },
+//   uSensorAngle: { value: 0.76 },
+//   uRotationRate: { value: 1.53 },
+//   uSensorOffset: { value: 11.2 },
+//   uSensorWidth: { value: 2.5 },
+//   uStepSize: { value: 21.0 },
+//   uCrowdAvoidance: { value: 0.44 },
+//   uWanderStrength: { value: 3.1 },
+//   uSensorSampleLevel: { value: 2 },
+//   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
+//   uTime: { value: 0.0 },
+//   uDelta: { value: 0.0 },
+// };
 
 export const DEFAULT_AGENT_DATA_UNIFORMS = {
   uAgentDataTexture: { value: null },
@@ -13,12 +65,17 @@ export const DEFAULT_AGENT_DATA_UNIFORMS = {
   uDisplayTextureResolution: {
     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   },
-  uSensorAngle: { value: Math.PI / 4 },
-  uRotationAngle: { value: Math.PI / 8 },
-  uSensorOffset: { value: 3.0 },
-  uSensorWidth: { value: 1.0 },
-  uStepSize: { value: 2.0 },
+  uSensorAngle: { value: 0.3 },
+  uRotationRate: { value: 0.8 },
+  uSensorOffset: { value: 8.2 },
+  uSensorWidth: { value: 1.5 },
+  uStepSize: { value: 22.0 },
+  uCrowdAvoidance: { value: 0.05 },
+  uWanderStrength: { value: 4.5 },
+  uSensorSampleLevel: { value: 2 },
+  uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
   uTime: { value: 0.0 },
+  uDelta: { value: 0.0 },
 };
 
 export const DEFAULT_AGENT_POSITIONS_UNIFORMS = {
@@ -28,18 +85,48 @@ export const DEFAULT_AGENT_POSITIONS_UNIFORMS = {
   },
 };
 
+// export const DEFAULT_TRAIL_UNIFORMS = {
+//   uAgentPositionsTexture: { value: null },
+//   uTrailTexture: { value: null },
+//   uDisplayTextureResolution: {
+//     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+//   },
+//   uDecayRate: { value: 0.05 },
+//   uDepositRate: { value: 15.0 },
+//   uDiffuseRate: { value: 7.0 },
+//   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
+//   uDelta: { value: 0.0 },
+//   uTime: { value: 0.0 },
+// };
+
+// export const DEFAULT_TRAIL_UNIFORMS = {
+//   uAgentPositionsTexture: { value: null },
+//   uTrailTexture: { value: null },
+//   uDisplayTextureResolution: {
+//     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+//   },
+//   uDecayRate: { value: 0.81 },
+//   uDepositRate: { value: 1.4 },
+//   uDiffuseRate: { value: 18.4 },
+//   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
+//   uDelta: { value: 0.0 },
+//   uTime: { value: 0.0 },
+// };
+
 export const DEFAULT_TRAIL_UNIFORMS = {
   uAgentPositionsTexture: { value: null },
   uTrailTexture: { value: null },
   uDisplayTextureResolution: {
     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   },
-  uDecayRate: { value: 0.001 },
-  uDepositRate: { value: 0.1 },
+  uDecayRate: { value: 0.08 },
+  uDepositRate: { value: 3.2 },
+  uDiffuseRate: { value: 5.0 },
+  uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
+  uBorderDistance: { value: 75.0 },
+  uBorderSmoothing: { value: 0.85 },
+  uBorderStrength: { value: 8.5 },
+  uBorderRoundness: { value: 120.0 },
+  uDelta: { value: 0.0 },
+  uTime: { value: 0.0 },
 };
-
-// In case I need this to be square.
-// export const TRAIL_TEXTURE_WIDTH = Math.ceil(
-//   Math.sqrt(DISPLAY_TEXTURE_WIDTH * DISPLAY_TEXTURE_HEIGHT),
-// );
-// export const TRAIL_TEXTURE_HEIGHT = TRAIL_TEXTURE_WIDTH;
