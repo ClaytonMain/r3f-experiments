@@ -344,8 +344,9 @@ function FBOSlimeMold() {
       window.innerHeight,
     );
     slimeMoldDisplayPlaneUniforms.uGlPositionScale.value = Math.min(
-      window.innerWidth / DISPLAY_TEXTURE_WIDTH,
-      window.innerHeight / DISPLAY_TEXTURE_HEIGHT,
+      (window.innerWidth / window.devicePixelRatio / DISPLAY_TEXTURE_WIDTH) * 4,
+      (window.innerHeight / window.devicePixelRatio / DISPLAY_TEXTURE_HEIGHT) *
+        4,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.innerWidth, window.innerHeight]);
@@ -603,7 +604,7 @@ function FBOSlimeMold() {
               /* glsl */ `
               #include <project_vertex>
               gl_Position = vec4(position, 1.0) * vec4(uResolution.y / uResolution.x * uDisplayTextureResolution.x / uDisplayTextureResolution.y, 1.0, 1.0, 1.0);
-              gl_Position.xy *= uGlPositionScale * 1.5;
+              gl_Position.xy *= uGlPositionScale;
               `,
             );
           }}

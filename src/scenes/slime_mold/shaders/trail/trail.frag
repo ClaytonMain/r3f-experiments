@@ -53,6 +53,8 @@ void main() {
     // Deposit trail if there is an agent present.
     intensity += agentPositionData.x * agentPositionData.y * uDepositRate * uDelta;
 
+    // TODO: Look into this:
+    // https://www.rastergrid.com/blog/2010/09/efficient-gaussian-blur-with-linear-sampling/
     // Diffuse the trail intensity based on the neighboring trail intensities.
     int i;
     float averageNeighborIntensity = intensity;
@@ -69,6 +71,8 @@ void main() {
         float neighborTrail = texture2D(uTrailTexture, neighborUv).x;
         vec2 neighborData = texture2D(uAgentPositionsTexture, neighborUv).xy;
         averageNeighborIntensity += clamp(neighborTrail + neighborData.x * neighborData.y * uDepositRate * uDelta, 0.0, 1.0);
+        // averageNeighborIntensity += neighborTrail;
+        // averageNeighborIntensity += texture2D(uTrailTexture, neighborUv).x;
     }
     averageNeighborIntensity /= 9.0;
 

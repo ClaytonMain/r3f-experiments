@@ -9,7 +9,7 @@ uniform float uSensorWidth;
 uniform float uStepSize;
 uniform float uCrowdAvoidance;
 uniform float uWanderStrength;
-uniform int uSensorSampleLevel;
+uniform float uSensorSampleLevel;
 uniform int uBoundaryBehavior; // 0 = wrap, 1 = bounce
 uniform float uDelta;
 uniform float uTime;
@@ -25,15 +25,19 @@ float neighborOffsets[8] = float[](1.0, 1.0, 0.0, -1.0, -1.0, -1.0, 0.0, 1.0);
 float getTrailIntensity(vec2 position) {
     vec2 positionToUvFactor = vec2(1.0) / uDisplayTextureResolution;
     float intensity = texture2D(uTrailTexture, position * positionToUvFactor).r;
+    bool hasSensorOffscreen = false;
     for (int i = 0; i < 8; i++) {
+        if (hasSensorOffscreen) {
+            break;
+        }
         int iy = (i + 6) % 8;
-        for (int j = 1; j <= uSensorSampleLevel; j++) {
-            vec2 neighborUv = (position + vec2(neighborOffsets[i], neighborOffsets[iy]) * uSensorWidth * (float(j) / float(uSensorSampleLevel))) * positionToUvFactor;
+        for (float j = 1.0; j <= uSensorSampleLevel; j++) {
+            vec2 neighborUv = (position + vec2(neighborOffsets[i], neighborOffsets[iy]) * uSensorWidth * j / uSensorSampleLevel) * positionToUvFactor;
             if (neighborUv.x <= 0.0 || neighborUv.x >= 1.0 || neighborUv.y <= 0.0 || neighborUv.y >= 1.0) {
                 if (uBoundaryBehavior == 0) { // Wrap
                     neighborUv = fract(neighborUv);
                 } else if (uBoundaryBehavior == 1) { // Bounce
-                    intensity -= 100.0;
+                    hasSensorOffscreen = true;
                     continue;
                 }
             }
@@ -41,11 +45,11 @@ float getTrailIntensity(vec2 position) {
             // trailData.g := 1.0 (unused).
             // trailData.b := 1.0 (unused).
             // trailData.a := 1.0 (unused).
-            vec4 trailData = texture2D(uTrailTexture, neighborUv);
-            intensity += trailData.r;
+            // vec4 trailData = texture2D(uTrailTexture, neighborUv);
+            intensity += texture2D(uTrailTexture, neighborUv).r;
         }
     }
-    return intensity / 8.0;
+    return hasSensorOffscreen ? -1000.0 : intensity / (uSensorSampleLevel * 8.0 + 1.0);
 }
 
 void main() {
@@ -73,7 +77,7 @@ void main() {
     vec2 newAgentPosition = agentPosition + agentDirection * uStepSize * uDelta;
     vec2 newAgentTrailUv = newAgentPosition * positionToUvFactor;
 
-    float agentTookStep = 1.0;
+    float agentDepositAmount = agentData.w;
 
     // agentDirectionAngle = atan(-1.0, 0.0);
 
@@ -93,21 +97,26 @@ void main() {
             newAgentPosition = agentPosition + agentDirection * uStepSize * uDelta;
             newAgentTrailUv = newAgentPosition * positionToUvFactor;
 
-            agentTookStep = 0.0;
+            agentDepositAmount -= uDelta * 0.5;
         }
     }
 
     float newAgentPositionIntensity = getTrailIntensity(newAgentPosition);
 
-    if ((newAgentPositionIntensity < (1.0 - uCrowdAvoidance)) && (agentTookStep == 1.0)) {
+    if (newAgentPositionIntensity >= 0.0) {
         // If the new position isn't overcrowded, update the agent position.
         agentPosition = newAgentPosition;
         agentTrailUv = newAgentTrailUv;
         agentDirectionAngle += uWanderStrength * (random(vUv + uTime) * 2.0 - 1.0) * uDelta;
+        if (newAgentPositionIntensity > (1.0 - uCrowdAvoidance)) {
+            agentDepositAmount -= uDelta * 0.5;
+        } else {
+            agentDepositAmount += uDelta * 0.5;
+        }
     } else {
         // Otherwise, randomize the direction.
         agentDirectionAngle += rotationWeight * positiveOrNegative;
-        agentTookStep = 0.0;
+        agentDepositAmount -= uDelta * 0.5;
     }
 
     // Sensory stage.
@@ -122,17 +131,41 @@ void main() {
     float frontLeftIntensity = getTrailIntensity(frontLeft);
     float frontRightIntensity = getTrailIntensity(frontRight);
 
+    // Strongly discourage overcrowding while allowing to steer towards least crowded
+    // position.
+    frontIntensity -= max(0.0, frontIntensity - (1.0 - uCrowdAvoidance)) * 100.0;
+    frontLeftIntensity -= max(0.0, frontLeftIntensity - (1.0 - uCrowdAvoidance)) * 100.0;
+    frontRightIntensity -= max(0.0, frontRightIntensity - (1.0 - uCrowdAvoidance)) * 100.0;
+
+    float chosenIntensity = 0.0;
+
     if (frontIntensity > frontLeftIntensity && frontIntensity > frontRightIntensity) {
         agentDirectionAngle += 0.0;
+        chosenIntensity = frontIntensity;
     } else if ((frontIntensity < frontLeftIntensity) && (frontIntensity < frontRightIntensity)) {
         agentDirectionAngle += rotationWeight * positiveOrNegative;
+        if (positiveOrNegative < 0.0) {
+            chosenIntensity = frontRightIntensity;
+        } else {
+            chosenIntensity = frontLeftIntensity;
+        }
     } else if (frontLeftIntensity < frontRightIntensity) {
         agentDirectionAngle -= rotationWeight;
+        chosenIntensity = frontRightIntensity;
     } else if (frontRightIntensity < frontLeftIntensity) {
         agentDirectionAngle += rotationWeight;
+        chosenIntensity = frontLeftIntensity;
     }
 
-    gl_FragColor = vec4(fract(agentPosition * positionToUvFactor), fract(agentDirectionAngle / PI2), agentTookStep);
+    if (chosenIntensity < 0.0) {
+        agentDepositAmount -= uDelta * 0.5;
+    } else {
+        agentDepositAmount += uDelta * 0.5;
+    }
+
+    agentDepositAmount = clamp(agentDepositAmount, 0.0, 1.0);
+
+    gl_FragColor = vec4(fract(agentPosition * positionToUvFactor), fract(agentDirectionAngle / PI2), agentDepositAmount);
 }
 
 // TODO

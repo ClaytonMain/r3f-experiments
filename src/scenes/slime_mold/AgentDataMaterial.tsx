@@ -18,24 +18,24 @@ function getData(width: number, height: number) {
     // const y = 0.5;
     // const z = Math.random();
 
-    // let z = Math.random();
-    // const x =
-    //   0.5 +
-    //   (Math.cos(z * Math.PI * 2) * 0.4 * DISPLAY_TEXTURE_HEIGHT) /
-    //     DISPLAY_TEXTURE_WIDTH;
-    // const y = 0.5 + Math.sin(z * Math.PI * 2) * 0.4;
-    // if (Math.random() > 0.1) {
-    //   z = (z + 0.5) % 1;
-    // }
-
-    const p = Math.random();
-    const r = Math.random() * 0.4;
+    let z = Math.random();
     const x =
       0.5 +
-      (Math.cos(p * Math.PI * 2) * r * DISPLAY_TEXTURE_HEIGHT) /
+      (Math.cos(z * Math.PI * 2) * 0.4 * DISPLAY_TEXTURE_HEIGHT) /
         DISPLAY_TEXTURE_WIDTH;
-    const y = 0.5 + Math.sin(p * Math.PI * 2) * r;
-    const z = Math.random();
+    const y = 0.5 + Math.sin(z * Math.PI * 2) * 0.4;
+    if (Math.random() > 0.1) {
+      z = (z + 0.5) % 1;
+    }
+
+    // const p = Math.random();
+    // const r = Math.random() * 0.4;
+    // const x =
+    //   0.5 +
+    //   (Math.cos(p * Math.PI * 2) * r * DISPLAY_TEXTURE_HEIGHT) /
+    //     DISPLAY_TEXTURE_WIDTH;
+    // const y = 0.5 + Math.sin(p * Math.PI * 2) * r;
+    // const z = Math.random();
 
     const i4 = i * 4;
     data[i4 + 0] = x;

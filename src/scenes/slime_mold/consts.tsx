@@ -1,10 +1,13 @@
 import * as THREE from "three";
 
-export const GPU_TEXTURE_WIDTH = 1024;
-export const GPU_TEXTURE_HEIGHT = 1024;
+export const GPU_TEXTURE_WIDTH = 512;
+export const GPU_TEXTURE_HEIGHT = 512;
 
-export const DISPLAY_TEXTURE_WIDTH = 1920;
-export const DISPLAY_TEXTURE_HEIGHT = 1080;
+// export const DISPLAY_TEXTURE_WIDTH = 1920;
+// export const DISPLAY_TEXTURE_HEIGHT = 1080;
+
+export const DISPLAY_TEXTURE_WIDTH = 3840;
+export const DISPLAY_TEXTURE_HEIGHT = 2160;
 
 // export const GPU_TEXTURE_WIDTH = 16;
 // export const GPU_TEXTURE_HEIGHT = 16;
@@ -16,7 +19,7 @@ export const DEFAULT_SHARED_UNIFORMS = {
   uBoundaryBehavior: { value: 1 }, // 0 = wrap, 1 = bounce
 };
 
-export const DEFAULT_SIMULATION_SPEED = 1.7;
+export const DEFAULT_SIMULATION_SPEED = 2.7;
 
 // export const DEFAULT_AGENT_DATA_UNIFORMS = {
 //   uAgentDataTexture: { value: null },
@@ -65,12 +68,12 @@ export const DEFAULT_AGENT_DATA_UNIFORMS = {
   uDisplayTextureResolution: {
     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   },
-  uSensorAngle: { value: 0.3 },
-  uRotationRate: { value: 0.8 },
-  uSensorOffset: { value: 8.2 },
-  uSensorWidth: { value: 1.5 },
-  uStepSize: { value: 22.0 },
-  uCrowdAvoidance: { value: 0.05 },
+  uSensorAngle: { value: Math.PI / 8 },
+  uRotationRate: { value: 1.5 },
+  uSensorOffset: { value: 15.2 },
+  uSensorWidth: { value: 2.5 },
+  uStepSize: { value: 12.0 },
+  uCrowdAvoidance: { value: 0.15 },
   uWanderStrength: { value: 4.5 },
   uSensorSampleLevel: { value: 2 },
   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
@@ -119,9 +122,9 @@ export const DEFAULT_TRAIL_UNIFORMS = {
   uDisplayTextureResolution: {
     value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
   },
-  uDecayRate: { value: 0.08 },
-  uDepositRate: { value: 3.2 },
-  uDiffuseRate: { value: 5.0 },
+  uDecayRate: { value: 0.18 },
+  uDepositRate: { value: 5.2 },
+  uDiffuseRate: { value: 8.0 },
   uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
   uBorderDistance: { value: 75.0 },
   uBorderSmoothing: { value: 0.85 },
