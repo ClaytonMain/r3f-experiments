@@ -38,14 +38,14 @@ void main() {
     vec2 uv = vUv;
 
     // trailData.r := Current trail intensity.
-    // trailData.g := 1.0 (unused).
+    // trailData.g := Last present agent's direction.
     // trailData.b := 1.0 (unused).
     // trailData.a := 1.0 (unused).
     vec4 trailData = texture2D(uTrailTexture, uv);
 
     // agentPositionData.r := 1.0 or 0.0 -> Agent presence boolean.
     // agentPositionData.g := 1.0 or 0.0 -> Agent took step boolean.
-    // agentPositionData.b := 1.0 (unused).
+    // agentPositionData.b := Agent direction.
     // agentPositionData.a := 1.0 (unused).
     vec4 agentPositionData = texture2D(uAgentPositionsTexture, uv);
 
@@ -70,7 +70,7 @@ void main() {
         }
         float neighborTrail = texture2D(uTrailTexture, neighborUv).x;
         vec2 neighborData = texture2D(uAgentPositionsTexture, neighborUv).xy;
-        averageNeighborIntensity += clamp(neighborTrail + neighborData.x * neighborData.y * uDepositRate * uDelta, 0.0, 1.0);
+        averageNeighborIntensity += min(neighborTrail + neighborData.x * neighborData.y * uDepositRate * uDelta, 1.0);
         // averageNeighborIntensity += neighborTrail;
         // averageNeighborIntensity += texture2D(uTrailTexture, neighborUv).x;
     }
@@ -81,9 +81,9 @@ void main() {
     } else {
         // Borrowing some diffuse logic from Sebastian Lague's implementation.
         // https://github.com/SebLague/Slime-Simulation/blob/main/Assets/Scripts/Slime/SlimeSim.compute
-        float diffuseWeight = clamp(uDiffuseRate * uDelta, 0.0, 1.0);
+        float diffuseWeight = min(uDiffuseRate * uDelta, 1.0);
         averageNeighborIntensity = intensity * (1.0 - diffuseWeight) + averageNeighborIntensity * diffuseWeight;
-        intensity = clamp(averageNeighborIntensity - uDecayRate * uDelta, 0.0, 1.0);
+        intensity = max(averageNeighborIntensity - uDecayRate * uDelta, 0.0);
     }
 
     // Decay border.
@@ -95,9 +95,11 @@ void main() {
     float edgeDecayRate = edgeDistance * uBorderStrength;
 
     // intensity *= edgeDistance;
-    intensity = clamp(intensity - edgeDecayRate * uDelta, 0.0, 1.0);
+    intensity = max(intensity - edgeDecayRate * uDelta, 0.0);
 
-    gl_FragColor = vec4(intensity, intensity, intensity, 1.0);
+    float lastAgentDirection = agentPositionData.z > 0.0 ? agentPositionData.z : trailData.y;
+
+    gl_FragColor = vec4(intensity, lastAgentDirection, 0.0, 1.0);
     // gl_FragColor = vec4(intensity, edgeDistance, edgeDistance, 1.0);
     // gl_FragColor = vec4(intensity, edgeDecayRate, edgeDecayRate, 1.0);
 }

@@ -1,5 +1,11 @@
 import { Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import {
+  Bloom,
+  ColorAverage,
+  EffectComposer,
+} from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import { Suspense, useEffect } from "react";
 import Footer from "../../components/Footer";
 import SlimeMold from "./SlimeMold";
@@ -35,6 +41,14 @@ export default function SlimeMoldScene() {
           <SlimeMold />
           <Stats />
         </Suspense>
+        <EffectComposer>
+          {/* <ColorAverage blendFunction={BlendFunction.ADD} /> */}
+          <Bloom
+            luminanceThreshold={0.0}
+            luminanceSmoothing={0.9}
+            height={300}
+          />
+        </EffectComposer>
       </Canvas>
       <Footer />
     </>

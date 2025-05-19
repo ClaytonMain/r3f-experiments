@@ -1,6 +1,7 @@
 uniform sampler2D uAgentDataTexture;
 uniform vec2 uDisplayTextureResolution;
 
+varying float vAgentDirectionAngle;
 varying float vAgentDepositAmount;
 
 void main() {
@@ -14,7 +15,8 @@ void main() {
 
     agentPosition.xy *= uDisplayTextureResolution;
 
-    vAgentDepositAmount = agentData.a;
+    vAgentDirectionAngle = agentData.z;
+    vAgentDepositAmount = agentData.w;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(agentPosition, 1.0);
 
