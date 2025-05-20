@@ -3,13 +3,13 @@ import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Suspense, useEffect, useMemo } from "react";
 import Footer from "../../components/Footer";
-import SlimeMold from "./SlimeMold";
+import Test from "./Test";
 
-export default function SlimeMoldScene() {
+export default function TestScene() {
   const backgroundColor = useMemo(() => "#18042b", []);
 
   useEffect(() => {
-    document.title = "Slime Mold Scene";
+    document.title = "Test Scene";
     document.body.style.background = backgroundColor;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -33,7 +33,7 @@ export default function SlimeMoldScene() {
       >
         <Suspense fallback={null}>
           <ambientLight color={"#fff"} intensity={1.0} />
-          <SlimeMold />
+          <Test />
           <Stats />
         </Suspense>
         <EffectComposer>
