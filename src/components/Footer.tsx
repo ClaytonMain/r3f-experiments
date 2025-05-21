@@ -139,7 +139,6 @@ export default function Footer({
             <option value="infinity_mirror">Infinity Mirror</option>
             <option value="menger_sponge">Menger Sponge</option>
             <option value="slime_mold">Slime Mold</option>
-            <option value="test">Test</option>
           </select>
         </form>
         {information && (

@@ -10,7 +10,6 @@ import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshS
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
 import SlimeMoldScene from "./scenes/slime_mold/SlimeMoldScene";
 import SnowScene from "./scenes/snow/SnowScene";
-import TestScene from "./scenes/test/TestScene";
 
 function App() {
   return (
@@ -34,7 +33,6 @@ function App() {
       <Route path="/infinity_mirror" element={<InfinityMirrorScene />} />
       <Route path="/menger_sponge" element={<MengerSpongeScene />} />
       <Route path="/slime_mold" element={<SlimeMoldScene />} />
-      <Route path="/test" element={<TestScene />} />
       <Route path="*" element={<AttractorScene />} />
     </Routes>
   );
