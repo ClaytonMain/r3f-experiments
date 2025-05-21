@@ -29,41 +29,38 @@ extend({ AgentDataMaterial, AgentPositionsMaterial, TrailMaterial });
 // Also credit to this person for the idea of using points for the trail:
 // https://kaesve.nl/projects/mold/summary.html
 
+const boundaryBehaviors = ["Wrap", "Bounce"];
+const texturePlaneUniforms = {
+  uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
+  uShowTexture: new THREE.Uniform(1),
+};
+const slimeMoldDisplayPlaneUniforms = {
+  uTrailTexture: new THREE.Uniform(new THREE.Texture()),
+  uAgentPositionsTexture: new THREE.Uniform(new THREE.Texture()),
+  uDisplayTextureResolution: new THREE.Uniform(
+    new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+  ),
+  uDisplayScale: new THREE.Uniform(new THREE.Vector2(1, 1)),
+  uTime: new THREE.Uniform(0.0),
+  uDelta: new THREE.Uniform(0.0),
+  uPaletteA: new THREE.Uniform(
+    new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+  ),
+  uPaletteB: new THREE.Uniform(
+    new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+  ),
+  uPaletteC: new THREE.Uniform(
+    new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+  ),
+  uPaletteD: new THREE.Uniform(
+    new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+  ),
+};
+
 function FBOSlimeMold() {
-  const boundaryBehaviors = useMemo(() => ["Wrap", "Bounce"], []);
-  const texturePlaneUniforms = useMemo(
-    () => ({
-      uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
-      uShowTexture: new THREE.Uniform(1),
-    }),
-    [],
-  );
-  const slimeMoldDisplayPlaneUniforms = useMemo(
-    () => ({
-      uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
-      uDisplayTextureResolution: new THREE.Uniform(
-        new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
-      ),
-      uGlPositionScale: new THREE.Uniform(1),
-      uTrailTexture: new THREE.Uniform(new THREE.Texture()),
-      uAgentPositionsTexture: new THREE.Uniform(new THREE.Texture()),
-      uTime: new THREE.Uniform(0.0),
-      uDelta: new THREE.Uniform(0.0),
-      uPaletteA: new THREE.Uniform(
-        new THREE.Vector3(Math.random(), Math.random(), Math.random()),
-      ),
-      uPaletteB: new THREE.Uniform(
-        new THREE.Vector3(Math.random(), Math.random(), Math.random()),
-      ),
-      uPaletteC: new THREE.Uniform(
-        new THREE.Vector3(Math.random(), Math.random(), Math.random()),
-      ),
-      uPaletteD: new THREE.Uniform(
-        new THREE.Vector3(Math.random(), Math.random(), Math.random()),
-      ),
-    }),
-    [],
-  );
+  useEffect(() => {
+    // Initialize uniforms.
+  }, []);
 
   useControls(
     "Slime Mold",
@@ -243,45 +240,43 @@ function FBOSlimeMold() {
     },
   );
 
-  console.log("Component Rendered");
-
   const viewport = useThree((state) => state.viewport);
 
   const simulationSpeedRef = useRef(DEFAULT_SIMULATION_SPEED);
 
-  const agentDataMaterialRefA = useRef<AgentDataMaterial>(null);
-  const agentDataMaterialRefB = useRef<AgentDataMaterial>(null);
-  const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null);
-  const trailMaterialRefA = useRef<TrailMaterial>(null);
-  const trailMaterialRefB = useRef<TrailMaterial>(null);
+  const agentDataMaterialRefA = useRef<AgentDataMaterial>(null!);
+  const agentDataMaterialRefB = useRef<AgentDataMaterial>(null!);
+  const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null!);
+  const trailMaterialRefA = useRef<TrailMaterial>(null!);
+  const trailMaterialRefB = useRef<TrailMaterial>(null!);
 
-  const agentDataDisplayPlaneRef = useRef<THREE.Mesh>(null);
-  const agentPositionsDisplayPlaneRef = useRef<THREE.Mesh>(null);
-  const trailDisplayPlaneRef = useRef<THREE.Mesh>(null);
+  const agentDataDisplayPlaneRef = useRef<THREE.Mesh>(null!);
+  const agentPositionsDisplayPlaneRef = useRef<THREE.Mesh>(null!);
+  const trailDisplayPlaneRef = useRef<THREE.Mesh>(null!);
 
-  const slimeMoldDisplayShaderRef = useRef<THREE.ShaderMaterial>(null);
+  const slimeMoldDisplayShaderRef = useRef<THREE.ShaderMaterial>(null!);
 
-  const agentDataSceneA = new THREE.Scene();
-  const agentDataSceneB = new THREE.Scene();
-  const agentPositionsScene = new THREE.Scene();
-  const trailSceneA = new THREE.Scene();
-  const trailSceneB = new THREE.Scene();
+  const agentDataSceneA = useMemo(() => new THREE.Scene(), []);
+  const agentDataSceneB = useMemo(() => new THREE.Scene(), []);
+  const agentPositionsScene = useMemo(() => new THREE.Scene(), []);
+  const trailSceneA = useMemo(() => new THREE.Scene(), []);
+  const trailSceneB = useMemo(() => new THREE.Scene(), []);
 
-  const cameraA = new THREE.OrthographicCamera(
-    -1,
-    1,
-    1,
-    -1,
-    1 / Math.pow(2, 53),
-    1,
+  const cameraA = useMemo(
+    () => new THREE.OrthographicCamera(-1, 1, 1, -1, 1 / Math.pow(2, 53), 1),
+    [],
   );
-  const cameraB = new THREE.OrthographicCamera(
-    0,
-    DISPLAY_TEXTURE_WIDTH,
-    DISPLAY_TEXTURE_HEIGHT,
-    0,
-    1 / Math.pow(2, 53),
-    1,
+  const cameraB = useMemo(
+    () =>
+      new THREE.OrthographicCamera(
+        0,
+        DISPLAY_TEXTURE_WIDTH,
+        DISPLAY_TEXTURE_HEIGHT,
+        0,
+        1 / Math.pow(2, 53),
+        1,
+      ),
+    [],
   );
 
   const renderPlanePositions = useMemo(
@@ -359,9 +354,12 @@ function FBOSlimeMold() {
   }, [GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT]);
 
   useEffect(() => {
-    setTimeout(function () {
+    const timer = setTimeout(function () {
       location.reload();
     }, 300000);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -371,51 +369,24 @@ function FBOSlimeMold() {
         viewport.height,
       );
     }
-
-    // agentDataMaterialRefA.current!.uniforms.uAgentDataTexture.value =
-    //   agentDataRenderTargetB.texture;
-    // agentDataMaterialRefA.current!.uniforms.uAgentPositionsTexture.value =
-    //   agentPositionsRenderTarget.texture;
-    // agentDataMaterialRefA.current!.uniforms.uTrailTexture.value =
-    //   trailRenderTargetB.texture;
-
-    // agentDataMaterialRefB.current!.uniforms.uAgentDataTexture.value =
-    //   agentDataRenderTargetA.texture;
-    // agentDataMaterialRefB.current!.uniforms.uAgentPositionsTexture.value =
-    //   agentPositionsRenderTarget.texture;
-    // agentDataMaterialRefB.current!.uniforms.uTrailTexture.value =
-    //   trailRenderTargetA.texture;
-
-    // if (pingPongRef.current) {
-    //   agentPositionsMaterialRef.current!.uniforms.uAgentDataTexture.value =
-    //     agentDataRenderTargetA.texture;
-    // } else {
-    //   agentPositionsMaterialRef.current!.uniforms.uAgentDataTexture.value =
-    //     agentDataRenderTargetB.texture;
-    // }
-
-    // trailMaterialRefA.current!.uniforms.uAgentPositionsTexture.value =
-    //   agentPositionsRenderTarget.texture;
-    // trailMaterialRefA.current!.uniforms.uTrailTexture.value =
-    //   trailRenderTargetB.texture;
-
-    // trailMaterialRefB.current!.uniforms.uAgentPositionsTexture.value =
-    //   agentPositionsRenderTarget.texture;
-    // trailMaterialRefB.current!.uniforms.uTrailTexture.value =
-    //   trailRenderTargetA.texture;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport]);
 
   useEffect(() => {
-    slimeMoldDisplayPlaneUniforms.uResolution.value = new THREE.Vector2(
-      window.innerWidth,
-      window.innerHeight,
-    );
-    slimeMoldDisplayPlaneUniforms.uGlPositionScale.value = Math.min(
-      (window.innerWidth / window.devicePixelRatio / DISPLAY_TEXTURE_WIDTH) * 4,
-      (window.innerHeight / window.devicePixelRatio / DISPLAY_TEXTURE_HEIGHT) *
-        4,
-    );
+    const targetAspect = DISPLAY_TEXTURE_WIDTH / DISPLAY_TEXTURE_HEIGHT;
+    const windowAspect = window.innerWidth / window.innerHeight;
+
+    // If windowAspect > targetAspect scale x, otherwise scale y
+    if (windowAspect > targetAspect) {
+      slimeMoldDisplayPlaneUniforms.uDisplayScale.value = new THREE.Vector2(
+        (targetAspect * 2) / windowAspect,
+        2,
+      );
+    } else {
+      slimeMoldDisplayPlaneUniforms.uDisplayScale.value = new THREE.Vector2(
+        2,
+        (windowAspect * 2) / targetAspect,
+      );
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [window.innerWidth, window.innerHeight]);
 
@@ -423,51 +394,34 @@ function FBOSlimeMold() {
   const uDeltaRef = useRef(0.0);
   const uTimeRef = useRef(0.0);
 
-  useFrame((state, delta) => {
-    const { gl } = state;
+  useFrame(({ gl }, delta) => {
     uDeltaRef.current = Math.min(delta * simulationSpeedRef.current, 0.1);
     uTimeRef.current += uDeltaRef.current;
 
     if (pingPongRef.current) {
-      if (agentDataMaterialRefA.current) {
-        agentDataMaterialRefA.current.uniforms.uDelta.value = uDeltaRef.current;
-        agentDataMaterialRefA.current.uniforms.uTime.value = uTimeRef.current;
-      }
+      agentDataMaterialRefA.current.uniforms.uDelta.value = uDeltaRef.current;
+      agentDataMaterialRefA.current.uniforms.uTime.value = uTimeRef.current;
 
       gl.setRenderTarget(agentDataRenderTargetA);
       gl.clear();
       gl.render(agentDataSceneA, cameraA);
 
-      if (agentDataRenderTargetA.texture) {
-        if (agentDataMaterialRefB.current) {
-          agentDataMaterialRefB.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetA.texture;
-        }
-        if (agentPositionsMaterialRef.current) {
-          agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetA.texture;
-        }
-      }
+      agentDataMaterialRefB.current.uniforms.uAgentDataTexture.value =
+        agentDataRenderTargetA.texture;
+      agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
+        agentDataRenderTargetA.texture;
     } else {
-      if (agentDataMaterialRefB.current) {
-        agentDataMaterialRefB.current.uniforms.uDelta.value = uDeltaRef.current;
-        agentDataMaterialRefB.current.uniforms.uTime.value = uTimeRef.current;
-      }
+      agentDataMaterialRefB.current.uniforms.uDelta.value = uDeltaRef.current;
+      agentDataMaterialRefB.current.uniforms.uTime.value = uTimeRef.current;
 
       gl.setRenderTarget(agentDataRenderTargetB);
       gl.clear();
       gl.render(agentDataSceneB, cameraA);
 
-      if (agentDataRenderTargetB.texture) {
-        if (agentDataMaterialRefA.current) {
-          agentDataMaterialRefA.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetB.texture;
-        }
-        if (agentPositionsMaterialRef.current) {
-          agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetB.texture;
-        }
-      }
+      agentDataMaterialRefA.current.uniforms.uAgentDataTexture.value =
+        agentDataRenderTargetB.texture;
+      agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
+        agentDataRenderTargetB.texture;
     }
 
     gl.setRenderTarget(agentPositionsRenderTarget);
@@ -475,94 +429,57 @@ function FBOSlimeMold() {
     gl.render(agentPositionsScene, cameraB);
 
     if (pingPongRef.current) {
-      if (trailMaterialRefA.current) {
-        trailMaterialRefA.current.uniforms.uDelta.value = uDeltaRef.current;
-        trailMaterialRefA.current.uniforms.uTime.value = uTimeRef.current;
-        if (agentPositionsRenderTarget.texture) {
-          trailMaterialRefA.current.uniforms.uAgentPositionsTexture.value =
-            agentPositionsRenderTarget.texture;
-        }
-      }
+      trailMaterialRefA.current.uniforms.uDelta.value = uDeltaRef.current;
+      trailMaterialRefA.current.uniforms.uTime.value = uTimeRef.current;
+      trailMaterialRefA.current.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
 
       gl.setRenderTarget(trailRenderTargetA);
       gl.clear();
       gl.render(trailSceneA, cameraA);
 
-      if (trailRenderTargetA.texture) {
-        if (trailMaterialRefB.current) {
-          trailMaterialRefB.current.uniforms.uTrailTexture.value =
-            trailRenderTargetA.texture;
-        }
-        if (agentDataMaterialRefB.current) {
-          agentDataMaterialRefB.current.uniforms.uTrailTexture.value =
-            trailRenderTargetA.texture;
-        }
-      }
+      trailMaterialRefB.current.uniforms.uTrailTexture.value =
+        trailRenderTargetA.texture;
+      agentDataMaterialRefB.current.uniforms.uTrailTexture.value =
+        trailRenderTargetA.texture;
     } else {
-      if (trailMaterialRefB.current) {
-        trailMaterialRefB.current.uniforms.uDelta.value = uDeltaRef.current;
-        trailMaterialRefB.current.uniforms.uTime.value = uTimeRef.current;
-        if (agentPositionsRenderTarget.texture) {
-          trailMaterialRefB.current.uniforms.uAgentPositionsTexture.value =
-            agentPositionsRenderTarget.texture;
-        }
-      }
+      trailMaterialRefB.current.uniforms.uDelta.value = uDeltaRef.current;
+      trailMaterialRefB.current.uniforms.uTime.value = uTimeRef.current;
+      trailMaterialRefB.current.uniforms.uAgentPositionsTexture.value =
+        agentPositionsRenderTarget.texture;
 
       gl.setRenderTarget(trailRenderTargetB);
       gl.clear();
       gl.render(trailSceneB, cameraA);
 
-      if (trailRenderTargetB.texture) {
-        if (trailMaterialRefA.current) {
-          trailMaterialRefA.current.uniforms.uTrailTexture.value =
-            trailRenderTargetB.texture;
-        }
-        if (agentDataMaterialRefA.current) {
-          agentDataMaterialRefA.current.uniforms.uTrailTexture.value =
-            trailRenderTargetB.texture;
-        }
-      }
+      trailMaterialRefA.current.uniforms.uTrailTexture.value =
+        trailRenderTargetB.texture;
+      agentDataMaterialRefA.current.uniforms.uTrailTexture.value =
+        trailRenderTargetB.texture;
     }
 
     gl.setRenderTarget(null);
 
     if (pingPongRef.current) {
-      if (trailRenderTargetA.texture) {
-        slimeMoldDisplayPlaneUniforms.uTrailTexture.value =
-          trailRenderTargetA.texture;
-      }
+      slimeMoldDisplayPlaneUniforms.uTrailTexture.value =
+        trailRenderTargetA.texture;
     } else {
-      if (trailRenderTargetB.texture) {
-        slimeMoldDisplayPlaneUniforms.uTrailTexture.value =
-          trailRenderTargetB.texture;
-      }
+      slimeMoldDisplayPlaneUniforms.uTrailTexture.value =
+        trailRenderTargetB.texture;
     }
 
-    if (agentPositionsRenderTarget.texture) {
-      slimeMoldDisplayPlaneUniforms.uAgentPositionsTexture.value =
-        agentPositionsRenderTarget.texture;
-    }
-
+    slimeMoldDisplayPlaneUniforms.uAgentPositionsTexture.value =
+      agentPositionsRenderTarget.texture;
     slimeMoldDisplayPlaneUniforms.uDelta.value = uDeltaRef.current;
     slimeMoldDisplayPlaneUniforms.uTime.value = uTimeRef.current;
-
-    if (agentDataDisplayPlaneRef.current && agentDataRenderTargetA.texture) {
-      // @ts-expect-error `map` does exist.
-      agentDataDisplayPlaneRef.current.material.map =
-        agentDataRenderTargetA.texture;
-    }
-    if (
-      agentPositionsDisplayPlaneRef.current &&
-      agentPositionsRenderTarget.texture
-    ) {
-      // @ts-expect-error `map` does exist.
-      agentPositionsDisplayPlaneRef.current.material.map =
-        agentPositionsRenderTarget.texture;
-    }
-    if (trailDisplayPlaneRef.current && trailRenderTargetA.texture) {
-      // @ts-expect-error `map` does exist.
-      trailDisplayPlaneRef.current.material.map = trailRenderTargetA.texture;
-    }
+    // @ts-expect-error `map` does exist.
+    agentDataDisplayPlaneRef.current.material.map =
+      agentDataRenderTargetA.texture;
+    // @ts-expect-error `map` does exist.
+    agentPositionsDisplayPlaneRef.current.material.map =
+      agentPositionsRenderTarget.texture;
+    // @ts-expect-error `map` does exist.
+    trailDisplayPlaneRef.current.material.map = trailRenderTargetA.texture;
 
     pingPongRef.current = !pingPongRef.current;
   });
