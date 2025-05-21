@@ -8,6 +8,7 @@ import LightGridScene from "./scenes/light_grid/LightGridScene";
 import MengerSpongeScene from "./scenes/menger_sponge/MengerSpongeScene";
 import MeshSurfaceGameOfLifeScene from "./scenes/mesh_surface_game_of_life/MeshSurfaceGameOfLifeScene";
 import PolygonizerScene from "./scenes/polygonizer/PolygonizerScene";
+import SlimeMoldScene from "./scenes/slime_mold/SlimeMoldScene";
 import SnowScene from "./scenes/snow/SnowScene";
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
       />
       <Route path="/infinity_mirror" element={<InfinityMirrorScene />} />
       <Route path="/menger_sponge" element={<MengerSpongeScene />} />
+      <Route path="/slime_mold" element={<SlimeMoldScene />} />
       <Route path="*" element={<AttractorScene />} />
     </Routes>
   );

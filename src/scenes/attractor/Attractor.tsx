@@ -51,6 +51,7 @@ export default function Attractor({
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
 }) {
+  console.log("component reloaded");
   const { texturePosition, textureVelocity } = useGPGPU({
     searchParams,
     setSearchParams,
