@@ -16,8 +16,14 @@ import {
   GPU_TEXTURE_HEIGHT,
   GPU_TEXTURE_WIDTH,
 } from "./consts";
+import agentDataFragmentShader from "./shaders/agentData/agentData.frag";
+import agentDataVertexShader from "./shaders/agentData/agentData.vert";
+import agentPositionsFragmentShader from "./shaders/agentPositions/agentPositions.frag";
+import agentPositionsVertexShader from "./shaders/agentPositions/agentPositions.vert";
 import displayFragmentShader from "./shaders/display/display.frag";
 import displayVertexShader from "./shaders/display/display.vert";
+import trailFragmentShader from "./shaders/trail/trail.frag";
+import trailVertexShader from "./shaders/trail/trail.vert";
 
 extend({ AgentDataMaterial, AgentPositionsMaterial, TrailMaterial });
 
@@ -105,11 +111,11 @@ function Test() {
 
   const simulationSpeedRef = useRef(DEFAULT_SIMULATION_SPEED);
 
-  const agentDataMaterialRefA = useRef<AgentDataMaterial>(null);
-  const agentDataMaterialRefB = useRef<AgentDataMaterial>(null);
-  const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null);
-  const trailMaterialRefA = useRef<TrailMaterial>(null);
-  const trailMaterialRefB = useRef<TrailMaterial>(null);
+  const agentDataMaterialRefA = useRef<THREE.ShaderMaterial>(null!);
+  const agentDataMaterialRefB = useRef<THREE.ShaderMaterial>(null!);
+  const agentPositionsMaterialRef = useRef<AgentPositionsMaterial>(null!);
+  const trailMaterialRefA = useRef<TrailMaterial>(null!);
+  const trailMaterialRefB = useRef<TrailMaterial>(null!);
 
   const agentDataDisplayPlaneRef = useRef<THREE.Mesh>(null);
   const agentPositionsDisplayPlaneRef = useRef<THREE.Mesh>(null);
@@ -221,7 +227,6 @@ function Test() {
         viewport.height,
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport]);
 
   useEffect(() => {
@@ -327,46 +332,29 @@ function Test() {
     uDeltaRef.current = Math.min(delta * simulationSpeedRef.current, 0.1);
     uTimeRef.current += uDeltaRef.current;
 
-    if (pingPongRef.current) {
-      if (agentDataMaterialRefA.current) {
-        agentDataMaterialRefA.current.uniforms.uDelta.value = uDeltaRef.current;
-        agentDataMaterialRefA.current.uniforms.uTime.value = uTimeRef.current;
-      }
+    agentDataUniforms.uDelta.value = uDeltaRef.current;
+    agentDataUniforms.uTime.value = uTimeRef.current;
+    trailUniforms.uDelta.value = uDeltaRef.current;
+    trailUniforms.uTime.value = uTimeRef.current;
 
+    if (pingPongRef.current) {
       gl.setRenderTarget(agentDataRenderTargetA);
       gl.clear();
       gl.render(agentDataSceneA, cameraA);
 
-      if (agentDataRenderTargetA.texture) {
-        if (agentDataMaterialRefB.current) {
-          agentDataMaterialRefB.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetA.texture;
-        }
-        if (agentPositionsMaterialRef.current) {
-          agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetA.texture;
-        }
-      }
+      agentDataUniforms.uAgentDataTexture.value =
+        agentDataRenderTargetA.texture;
+      agentPositionsUniforms.uAgentDataTexture.value =
+        agentDataRenderTargetA.texture;
     } else {
-      if (agentDataMaterialRefB.current) {
-        agentDataMaterialRefB.current.uniforms.uDelta.value = uDeltaRef.current;
-        agentDataMaterialRefB.current.uniforms.uTime.value = uTimeRef.current;
-      }
-
       gl.setRenderTarget(agentDataRenderTargetB);
       gl.clear();
       gl.render(agentDataSceneB, cameraA);
 
-      if (agentDataRenderTargetB.texture) {
-        if (agentDataMaterialRefA.current) {
-          agentDataMaterialRefA.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetB.texture;
-        }
-        if (agentPositionsMaterialRef.current) {
-          agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
-            agentDataRenderTargetB.texture;
-        }
-      }
+      agentDataUniforms.uAgentDataTexture.value =
+        agentDataRenderTargetB.texture;
+      agentPositionsUniforms.uAgentDataTexture.value =
+        agentDataRenderTargetB.texture;
     }
 
     gl.setRenderTarget(agentPositionsRenderTarget);
@@ -470,9 +458,11 @@ function Test() {
     <>
       {createPortal(
         <mesh>
-          <agentDataMaterial
+          <shaderMaterial
             ref={agentDataMaterialRefA}
-            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT]}
+            uniforms={agentDataUniforms}
+            vertexShader={agentDataVertexShader}
+            fragmentShader={agentDataFragmentShader}
           />
           <bufferGeometry>
             <bufferAttribute
@@ -495,9 +485,11 @@ function Test() {
       )}
       {createPortal(
         <mesh>
-          <agentDataMaterial
+          <shaderMaterial
             ref={agentDataMaterialRefB}
-            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT]}
+            uniforms={agentDataUniforms}
+            vertexShader={agentDataVertexShader}
+            fragmentShader={agentDataFragmentShader}
           />
           <bufferGeometry>
             <bufferAttribute
