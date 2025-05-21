@@ -6,7 +6,7 @@ import Footer from "../../components/Footer";
 import SlimeMold from "./SlimeMold";
 
 export default function SlimeMoldScene() {
-  const backgroundColor = useMemo(() => "#18042b", []);
+  const backgroundColor = useMemo(() => "#060808", []);
 
   useEffect(() => {
     document.title = "Slime Mold Scene";
