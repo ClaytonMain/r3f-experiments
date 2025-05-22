@@ -8,12 +8,11 @@ import AgentPositionsMaterial from "./AgentPositionsMaterial";
 import TrailMaterial from "./TrailMaterial";
 import {
   CONTROL_BOUNDS,
-  DEFAULT_AGENT_DATA_UNIFORMS,
   DEFAULT_SHARED_UNIFORMS,
   DEFAULT_SIMULATION_SPEED,
-  DEFAULT_TRAIL_UNIFORMS,
   DISPLAY_TEXTURE_HEIGHT,
   DISPLAY_TEXTURE_WIDTH,
+  getGaussRandomInControlBounds,
   GPU_TEXTURE_HEIGHT,
   GPU_TEXTURE_WIDTH,
 } from "./consts";
@@ -57,17 +56,75 @@ const slimeMoldDisplayPlaneUniforms = {
   ),
 };
 
-function FBOSlimeMold() {
-  useEffect(() => {
-    // Initialize uniforms.
-  }, []);
+const agentDataUniforms = {
+  uAgentDataTexture: { value: new THREE.Texture() },
+  uAgentPositionsTexture: { value: new THREE.Texture() },
+  uTrailTexture: { value: new THREE.Texture() },
+  uDisplayTextureResolution: {
+    value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+  },
+  uSensorAngle: {
+    value: getGaussRandomInControlBounds("uSensorAngle", 22.5, 5),
+  },
+  uRotationRate: {
+    value: getGaussRandomInControlBounds("uRotationRate", 2, 0.4),
+  },
+  uSensorOffset: {
+    value: getGaussRandomInControlBounds("uSensorOffset", 15, 2),
+  },
+  uSensorWidth: {
+    value: getGaussRandomInControlBounds("uSensorWidth", 3, 0.2),
+  },
+  uStepSize: { value: getGaussRandomInControlBounds("uStepSize", 12, 2) },
+  uCrowdAvoidance: {
+    value: getGaussRandomInControlBounds("uCrowdAvoidance", 0.2, 0.05),
+  },
+  uWanderStrength: {
+    value: getGaussRandomInControlBounds("uWanderStrength", 5, 1.2),
+  },
+  uBoundaryBehavior: { value: 0 },
+  uTime: { value: 0.0 },
+  uDelta: { value: 0.0 },
+};
+const agentPositionsUniforms = {
+  uAgentDataTexture: { value: new THREE.Texture() },
+  uDisplayTextureResolution: {
+    value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+  },
+};
+const trailUniforms = {
+  uAgentPositionsTexture: { value: new THREE.Texture() },
+  uTrailTexture: { value: new THREE.Texture() },
+  uDisplayTextureResolution: {
+    value: new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
+  },
+  uDecayRate: { value: getGaussRandomInControlBounds("uDecayRate", 0.4, 0.1) },
+  uDepositRate: { value: getGaussRandomInControlBounds("uDepositRate", 5, 1) },
+  uDiffuseRate: { value: getGaussRandomInControlBounds("uDiffuseRate", 10, 2) },
+  uBoundaryBehavior: { value: 1 },
+  uBorderDistance: {
+    value: getGaussRandomInControlBounds("uBorderDistance", 50, 20),
+  },
+  uBorderSmoothing: {
+    value: getGaussRandomInControlBounds("uBorderSmoothing", 0.85, 0.5),
+  },
+  uBorderStrength: {
+    value: getGaussRandomInControlBounds("uBorderStrength", 8.5, 1),
+  },
+  uBorderRoundness: {
+    value: getGaussRandomInControlBounds("uBorderRoundness", 120, 20),
+  },
+  uDelta: { value: 0.0 },
+  uTime: { value: 0.0 },
+};
 
+function FBOSlimeMold() {
   useControls(
     "Slime Mold",
     {
       slimeMold_uSensorAngle: {
         label: "Sensor Degrees",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorAngle.value,
+        value: agentDataUniforms.uSensorAngle.value,
         min: CONTROL_BOUNDS.uSensorAngle.min,
         max: CONTROL_BOUNDS.uSensorAngle.max,
         onChange: (value) => {
@@ -79,7 +136,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uRotationRate: {
         label: "Rotation Rate",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uRotationRate.value,
+        value: agentDataUniforms.uRotationRate.value,
         min: CONTROL_BOUNDS.uRotationRate.min,
         max: CONTROL_BOUNDS.uRotationRate.max,
         onChange: (value) => {
@@ -89,7 +146,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uSensorOffset: {
         label: "Sensor Offset",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorOffset.value,
+        value: agentDataUniforms.uSensorOffset.value,
         min: CONTROL_BOUNDS.uSensorOffset.min,
         max: CONTROL_BOUNDS.uSensorOffset.max,
         onChange: (value) => {
@@ -99,7 +156,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uSensorWidth: {
         label: "Sensor Width",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uSensorWidth.value,
+        value: agentDataUniforms.uSensorWidth.value,
         min: CONTROL_BOUNDS.uSensorWidth.min,
         max: CONTROL_BOUNDS.uSensorWidth.max,
         onChange: (value) => {
@@ -109,7 +166,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uStepSize: {
         label: "Step Size",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uStepSize.value,
+        value: agentDataUniforms.uStepSize.value,
         min: CONTROL_BOUNDS.uStepSize.min,
         max: CONTROL_BOUNDS.uStepSize.max,
         onChange: (value) => {
@@ -119,7 +176,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uCrowdAvoidance: {
         label: "Crowd Avoidance",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uCrowdAvoidance.value,
+        value: agentDataUniforms.uCrowdAvoidance.value,
         min: CONTROL_BOUNDS.uCrowdAvoidance.min,
         max: CONTROL_BOUNDS.uCrowdAvoidance.max,
         onChange: (value) => {
@@ -129,7 +186,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uWanderStrength: {
         label: "Wander Strength",
-        value: DEFAULT_AGENT_DATA_UNIFORMS.uWanderStrength.value,
+        value: agentDataUniforms.uWanderStrength.value,
         min: CONTROL_BOUNDS.uWanderStrength.min,
         max: CONTROL_BOUNDS.uWanderStrength.max,
         onChange: (value) => {
@@ -139,7 +196,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uDecayRate: {
         label: "Decay Rate",
-        value: DEFAULT_TRAIL_UNIFORMS.uDecayRate.value,
+        value: trailUniforms.uDecayRate.value,
         min: CONTROL_BOUNDS.uDecayRate.min,
         max: CONTROL_BOUNDS.uDecayRate.max,
         step: 0.01,
@@ -150,7 +207,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uDepositRate: {
         label: "Deposit Rate",
-        value: DEFAULT_TRAIL_UNIFORMS.uDepositRate.value,
+        value: trailUniforms.uDepositRate.value,
         min: CONTROL_BOUNDS.uDepositRate.min,
         max: CONTROL_BOUNDS.uDepositRate.max,
         onChange: (value) => {
@@ -160,7 +217,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uDiffuseRate: {
         label: "Diffuse Rate",
-        value: DEFAULT_TRAIL_UNIFORMS.uDiffuseRate.value,
+        value: trailUniforms.uDiffuseRate.value,
         min: CONTROL_BOUNDS.uDiffuseRate.min,
         max: CONTROL_BOUNDS.uDiffuseRate.max,
         onChange: (value) => {
@@ -196,7 +253,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uBorderDistance: {
         label: "Border Distance",
-        value: DEFAULT_TRAIL_UNIFORMS.uBorderDistance.value,
+        value: trailUniforms.uBorderDistance.value,
         min: CONTROL_BOUNDS.uBorderDistance.min,
         max: CONTROL_BOUNDS.uBorderDistance.max,
         onChange: (value) => {
@@ -206,7 +263,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uBorderSmoothing: {
         label: "Border Smoothing",
-        value: DEFAULT_TRAIL_UNIFORMS.uBorderSmoothing.value,
+        value: trailUniforms.uBorderSmoothing.value,
         min: CONTROL_BOUNDS.uBorderSmoothing.min,
         max: CONTROL_BOUNDS.uBorderSmoothing.max,
         onChange: (value) => {
@@ -216,7 +273,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uBorderStrength: {
         label: "Border Strength",
-        value: DEFAULT_TRAIL_UNIFORMS.uBorderStrength.value,
+        value: trailUniforms.uBorderStrength.value,
         min: CONTROL_BOUNDS.uBorderStrength.min,
         max: CONTROL_BOUNDS.uBorderStrength.max,
         onChange: (value) => {
@@ -226,7 +283,7 @@ function FBOSlimeMold() {
       },
       slimeMold_uBorderRoundness: {
         label: "Border Roundness",
-        value: DEFAULT_TRAIL_UNIFORMS.uBorderRoundness.value,
+        value: trailUniforms.uBorderRoundness.value,
         min: CONTROL_BOUNDS.uBorderRoundness.min,
         max: CONTROL_BOUNDS.uBorderRoundness.max,
         onChange: (value) => {
@@ -490,7 +547,7 @@ function FBOSlimeMold() {
         <mesh>
           <agentDataMaterial
             ref={agentDataMaterialRefA}
-            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT]}
+            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT, agentDataUniforms]}
           />
           <bufferGeometry>
             <bufferAttribute
@@ -515,7 +572,7 @@ function FBOSlimeMold() {
         <mesh>
           <agentDataMaterial
             ref={agentDataMaterialRefB}
-            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT]}
+            args={[GPU_TEXTURE_WIDTH, GPU_TEXTURE_HEIGHT, agentDataUniforms]}
           />
           <bufferGeometry>
             <bufferAttribute
