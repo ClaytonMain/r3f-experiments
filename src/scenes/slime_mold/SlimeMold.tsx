@@ -1,6 +1,6 @@
 import { Plane, useFBO } from "@react-three/drei";
 import { createPortal, extend, useFrame, useThree } from "@react-three/fiber";
-import { useControls } from "leva";
+import { button, useControls } from "leva";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import AgentDataMaterial from "./AgentDataMaterial";
@@ -82,7 +82,7 @@ const agentDataUniforms = {
   uWanderStrength: {
     value: getGaussRandomInControlBounds("uWanderStrength", 5, 1.2),
   },
-  uBoundaryBehavior: { value: 0 },
+  uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
   uTime: { value: 0.0 },
   uDelta: { value: 0.0 },
 };
@@ -101,7 +101,7 @@ const trailUniforms = {
   uDecayRate: { value: getGaussRandomInControlBounds("uDecayRate", 0.4, 0.1) },
   uDepositRate: { value: getGaussRandomInControlBounds("uDepositRate", 5, 1) },
   uDiffuseRate: { value: getGaussRandomInControlBounds("uDiffuseRate", 10, 2) },
-  uBoundaryBehavior: { value: 1 },
+  uBoundaryBehavior: { value: DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value },
   uBorderDistance: {
     value: getGaussRandomInControlBounds("uBorderDistance", 50, 20),
   },
@@ -119,183 +119,198 @@ const trailUniforms = {
 };
 
 function FBOSlimeMold() {
-  useControls(
-    "Slime Mold",
-    {
-      slimeMold_uSensorAngle: {
-        label: "Sensor Degrees",
-        value: agentDataUniforms.uSensorAngle.value,
-        min: CONTROL_BOUNDS.uSensorAngle.min,
-        max: CONTROL_BOUNDS.uSensorAngle.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uSensorAngle.value =
-            (value / 180) * Math.PI;
-          agentDataMaterialRefB.current!.uniforms.uSensorAngle.value =
-            (value / 180) * Math.PI;
-        },
-      },
-      slimeMold_uRotationRate: {
-        label: "Rotation Rate",
-        value: agentDataUniforms.uRotationRate.value,
-        min: CONTROL_BOUNDS.uRotationRate.min,
-        max: CONTROL_BOUNDS.uRotationRate.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uRotationRate.value = value;
-          agentDataMaterialRefB.current!.uniforms.uRotationRate.value = value;
-        },
-      },
-      slimeMold_uSensorOffset: {
-        label: "Sensor Offset",
-        value: agentDataUniforms.uSensorOffset.value,
-        min: CONTROL_BOUNDS.uSensorOffset.min,
-        max: CONTROL_BOUNDS.uSensorOffset.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uSensorOffset.value = value;
-          agentDataMaterialRefB.current!.uniforms.uSensorOffset.value = value;
-        },
-      },
-      slimeMold_uSensorWidth: {
-        label: "Sensor Width",
-        value: agentDataUniforms.uSensorWidth.value,
-        min: CONTROL_BOUNDS.uSensorWidth.min,
-        max: CONTROL_BOUNDS.uSensorWidth.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uSensorWidth.value = value;
-          agentDataMaterialRefB.current!.uniforms.uSensorWidth.value = value;
-        },
-      },
-      slimeMold_uStepSize: {
-        label: "Step Size",
-        value: agentDataUniforms.uStepSize.value,
-        min: CONTROL_BOUNDS.uStepSize.min,
-        max: CONTROL_BOUNDS.uStepSize.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uStepSize.value = value;
-          agentDataMaterialRefB.current!.uniforms.uStepSize.value = value;
-        },
-      },
-      slimeMold_uCrowdAvoidance: {
-        label: "Crowd Avoidance",
-        value: agentDataUniforms.uCrowdAvoidance.value,
-        min: CONTROL_BOUNDS.uCrowdAvoidance.min,
-        max: CONTROL_BOUNDS.uCrowdAvoidance.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uCrowdAvoidance.value = value;
-          agentDataMaterialRefB.current!.uniforms.uCrowdAvoidance.value = value;
-        },
-      },
-      slimeMold_uWanderStrength: {
-        label: "Wander Strength",
-        value: agentDataUniforms.uWanderStrength.value,
-        min: CONTROL_BOUNDS.uWanderStrength.min,
-        max: CONTROL_BOUNDS.uWanderStrength.max,
-        onChange: (value) => {
-          agentDataMaterialRefA.current!.uniforms.uWanderStrength.value = value;
-          agentDataMaterialRefB.current!.uniforms.uWanderStrength.value = value;
-        },
-      },
-      slimeMold_uDecayRate: {
-        label: "Decay Rate",
-        value: trailUniforms.uDecayRate.value,
-        min: CONTROL_BOUNDS.uDecayRate.min,
-        max: CONTROL_BOUNDS.uDecayRate.max,
-        step: 0.01,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uDecayRate.value = value;
-          trailMaterialRefB.current!.uniforms.uDecayRate.value = value;
-        },
-      },
-      slimeMold_uDepositRate: {
-        label: "Deposit Rate",
-        value: trailUniforms.uDepositRate.value,
-        min: CONTROL_BOUNDS.uDepositRate.min,
-        max: CONTROL_BOUNDS.uDepositRate.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uDepositRate.value = value;
-          trailMaterialRefB.current!.uniforms.uDepositRate.value = value;
-        },
-      },
-      slimeMold_uDiffuseRate: {
-        label: "Diffuse Rate",
-        value: trailUniforms.uDiffuseRate.value,
-        min: CONTROL_BOUNDS.uDiffuseRate.min,
-        max: CONTROL_BOUNDS.uDiffuseRate.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uDiffuseRate.value = value;
-          trailMaterialRefB.current!.uniforms.uDiffuseRate.value = value;
-        },
-      },
-      slimeMold_uBoundaryBehavior: {
-        label: "Boundary Behavior",
-        value:
-          boundaryBehaviors[DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value],
-        options: boundaryBehaviors,
-        onChange: (value) => {
-          const valueIndex = boundaryBehaviors.indexOf(value);
-          agentDataMaterialRefA.current!.uniforms.uBoundaryBehavior.value =
-            valueIndex;
-          agentDataMaterialRefB.current!.uniforms.uBoundaryBehavior.value =
-            valueIndex;
-          trailMaterialRefA.current!.uniforms.uBoundaryBehavior.value =
-            valueIndex;
-          trailMaterialRefB.current!.uniforms.uBoundaryBehavior.value =
-            valueIndex;
-        },
-      },
-      slimeMold_simulationSpeed: {
-        label: "Simulation Speed",
-        value: DEFAULT_SIMULATION_SPEED,
-        min: CONTROL_BOUNDS.simulationSpeed.min,
-        max: CONTROL_BOUNDS.simulationSpeed.max,
-        onChange: (value) => {
-          simulationSpeedRef.current = value;
-        },
-      },
-      slimeMold_uBorderDistance: {
-        label: "Border Distance",
-        value: trailUniforms.uBorderDistance.value,
-        min: CONTROL_BOUNDS.uBorderDistance.min,
-        max: CONTROL_BOUNDS.uBorderDistance.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uBorderDistance.value = value;
-          trailMaterialRefB.current!.uniforms.uBorderDistance.value = value;
-        },
-      },
-      slimeMold_uBorderSmoothing: {
-        label: "Border Smoothing",
-        value: trailUniforms.uBorderSmoothing.value,
-        min: CONTROL_BOUNDS.uBorderSmoothing.min,
-        max: CONTROL_BOUNDS.uBorderSmoothing.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uBorderSmoothing.value = value;
-          trailMaterialRefB.current!.uniforms.uBorderSmoothing.value = value;
-        },
-      },
-      slimeMold_uBorderStrength: {
-        label: "Border Strength",
-        value: trailUniforms.uBorderStrength.value,
-        min: CONTROL_BOUNDS.uBorderStrength.min,
-        max: CONTROL_BOUNDS.uBorderStrength.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uBorderStrength.value = value;
-          trailMaterialRefB.current!.uniforms.uBorderStrength.value = value;
-        },
-      },
-      slimeMold_uBorderRoundness: {
-        label: "Border Roundness",
-        value: trailUniforms.uBorderRoundness.value,
-        min: CONTROL_BOUNDS.uBorderRoundness.min,
-        max: CONTROL_BOUNDS.uBorderRoundness.max,
-        onChange: (value) => {
-          trailMaterialRefA.current!.uniforms.uBorderRoundness.value = value;
-          trailMaterialRefB.current!.uniforms.uBorderRoundness.value = value;
-        },
+  function randomizeColorPalette() {
+    const keys = ["uPaletteA", "uPaletteB", "uPaletteC", "uPaletteD"];
+    keys.forEach((key) => {
+      const value = new THREE.Vector3(
+        Math.random(),
+        Math.random(),
+        Math.random(),
+      );
+      // @ts-expect-error the key is valid.
+      slimeMoldDisplayPlaneUniforms[key].value = value;
+      setControls({
+        [`slimeMold_${key}`]: value.toArray(),
+      });
+    });
+  }
+  const [, setControls] = useControls(() => ({
+    slimeMold_uSensorAngle: {
+      label: "Sensor Degrees",
+      value: agentDataUniforms.uSensorAngle.value,
+      min: CONTROL_BOUNDS.uSensorAngle.min,
+      max: CONTROL_BOUNDS.uSensorAngle.max,
+      onChange: (value) => {
+        agentDataUniforms.uSensorAngle.value = (value / 180) * Math.PI;
       },
     },
-    {
-      collapsed: true,
+    slimeMold_uRotationRate: {
+      label: "Rotation Rate",
+      value: agentDataUniforms.uRotationRate.value,
+      min: CONTROL_BOUNDS.uRotationRate.min,
+      max: CONTROL_BOUNDS.uRotationRate.max,
+      onChange: (value) => {
+        agentDataUniforms.uRotationRate.value = value;
+      },
     },
-  );
+    slimeMold_uSensorOffset: {
+      label: "Sensor Offset",
+      value: agentDataUniforms.uSensorOffset.value,
+      min: CONTROL_BOUNDS.uSensorOffset.min,
+      max: CONTROL_BOUNDS.uSensorOffset.max,
+      onChange: (value) => {
+        agentDataUniforms.uSensorOffset.value = value;
+      },
+    },
+    slimeMold_uSensorWidth: {
+      label: "Sensor Width",
+      value: agentDataUniforms.uSensorWidth.value,
+      min: CONTROL_BOUNDS.uSensorWidth.min,
+      max: CONTROL_BOUNDS.uSensorWidth.max,
+      onChange: (value) => {
+        agentDataUniforms.uSensorWidth.value = value;
+      },
+    },
+    slimeMold_uStepSize: {
+      label: "Step Size",
+      value: agentDataUniforms.uStepSize.value,
+      min: CONTROL_BOUNDS.uStepSize.min,
+      max: CONTROL_BOUNDS.uStepSize.max,
+      onChange: (value) => {
+        agentDataUniforms.uStepSize.value = value;
+      },
+    },
+    slimeMold_uCrowdAvoidance: {
+      label: "Crowd Avoidance",
+      value: agentDataUniforms.uCrowdAvoidance.value,
+      min: CONTROL_BOUNDS.uCrowdAvoidance.min,
+      max: CONTROL_BOUNDS.uCrowdAvoidance.max,
+      onChange: (value) => {
+        agentDataUniforms.uCrowdAvoidance.value = value;
+      },
+    },
+    slimeMold_uWanderStrength: {
+      label: "Wander Strength",
+      value: agentDataUniforms.uWanderStrength.value,
+      min: CONTROL_BOUNDS.uWanderStrength.min,
+      max: CONTROL_BOUNDS.uWanderStrength.max,
+      onChange: (value) => {
+        agentDataUniforms.uWanderStrength.value = value;
+      },
+    },
+    slimeMold_uDecayRate: {
+      label: "Decay Rate",
+      value: trailUniforms.uDecayRate.value,
+      min: CONTROL_BOUNDS.uDecayRate.min,
+      max: CONTROL_BOUNDS.uDecayRate.max,
+      step: 0.01,
+      onChange: (value) => {
+        trailUniforms.uDecayRate.value = value;
+      },
+    },
+    slimeMold_uDepositRate: {
+      label: "Deposit Rate",
+      value: trailUniforms.uDepositRate.value,
+      min: CONTROL_BOUNDS.uDepositRate.min,
+      max: CONTROL_BOUNDS.uDepositRate.max,
+      onChange: (value) => {
+        trailUniforms.uDepositRate.value = value;
+      },
+    },
+    slimeMold_uDiffuseRate: {
+      label: "Diffuse Rate",
+      value: trailUniforms.uDiffuseRate.value,
+      min: CONTROL_BOUNDS.uDiffuseRate.min,
+      max: CONTROL_BOUNDS.uDiffuseRate.max,
+      onChange: (value) => {
+        trailUniforms.uDiffuseRate.value = value;
+      },
+    },
+    slimeMold_uBoundaryBehavior: {
+      label: "Boundary Behavior",
+      value: boundaryBehaviors[DEFAULT_SHARED_UNIFORMS.uBoundaryBehavior.value],
+      options: boundaryBehaviors,
+      onChange: (value) => {
+        const valueIndex = boundaryBehaviors.indexOf(value);
+        agentDataUniforms.uBoundaryBehavior.value = valueIndex;
+        trailUniforms.uBoundaryBehavior.value = valueIndex;
+      },
+    },
+    slimeMold_simulationSpeed: {
+      label: "Simulation Speed",
+      value: DEFAULT_SIMULATION_SPEED,
+      min: CONTROL_BOUNDS.simulationSpeed.min,
+      max: CONTROL_BOUNDS.simulationSpeed.max,
+      onChange: (value) => {
+        simulationSpeedRef.current = value;
+      },
+    },
+    slimeMold_uBorderDistance: {
+      label: "Border Distance",
+      value: trailUniforms.uBorderDistance.value,
+      min: CONTROL_BOUNDS.uBorderDistance.min,
+      max: CONTROL_BOUNDS.uBorderDistance.max,
+      onChange: (value) => {
+        trailUniforms.uBorderDistance.value = value;
+      },
+    },
+    slimeMold_uBorderSmoothing: {
+      label: "Border Smoothing",
+      value: trailUniforms.uBorderSmoothing.value,
+      min: CONTROL_BOUNDS.uBorderSmoothing.min,
+      max: CONTROL_BOUNDS.uBorderSmoothing.max,
+      onChange: (value) => {
+        trailUniforms.uBorderSmoothing.value = value;
+      },
+    },
+    slimeMold_uBorderStrength: {
+      label: "Border Strength",
+      value: trailUniforms.uBorderStrength.value,
+      min: CONTROL_BOUNDS.uBorderStrength.min,
+      max: CONTROL_BOUNDS.uBorderStrength.max,
+      onChange: (value) => {
+        trailUniforms.uBorderStrength.value = value;
+      },
+    },
+    slimeMold_uBorderRoundness: {
+      label: "Border Roundness",
+      value: trailUniforms.uBorderRoundness.value,
+      min: CONTROL_BOUNDS.uBorderRoundness.min,
+      max: CONTROL_BOUNDS.uBorderRoundness.max,
+      onChange: (value) => {
+        trailUniforms.uBorderRoundness.value = value;
+      },
+    },
+    slimeMold_uPaletteA: {
+      label: "Palette A",
+      value: slimeMoldDisplayPlaneUniforms.uPaletteA.value.toArray(),
+      onChange: (value) => {
+        slimeMoldDisplayPlaneUniforms.uPaletteA.value = value;
+      },
+    },
+    slimeMold_uPaletteB: {
+      label: "Palette B",
+      value: slimeMoldDisplayPlaneUniforms.uPaletteB.value.toArray(),
+      onChange: (value) => {
+        slimeMoldDisplayPlaneUniforms.uPaletteB.value = value;
+      },
+    },
+    slimeMold_uPaletteC: {
+      label: "Palette C",
+      value: slimeMoldDisplayPlaneUniforms.uPaletteC.value.toArray(),
+      onChange: (value) => {
+        slimeMoldDisplayPlaneUniforms.uPaletteC.value = value;
+      },
+    },
+    slimeMold_uPaletteD: {
+      label: "Palette D",
+      value: slimeMoldDisplayPlaneUniforms.uPaletteD.value.toArray(),
+      onChange: (value) => {
+        slimeMoldDisplayPlaneUniforms.uPaletteD.value = value;
+      },
+    },
+    slimeMold_randomizeColorPalette: button(() => randomizeColorPalette()),
+  }));
 
   const viewport = useThree((state) => state.viewport);
 
@@ -597,7 +612,11 @@ function FBOSlimeMold() {
         <points>
           <agentPositionsMaterial
             ref={agentPositionsMaterialRef}
-            args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
+            args={[
+              DISPLAY_TEXTURE_WIDTH,
+              DISPLAY_TEXTURE_HEIGHT,
+              agentPositionsUniforms,
+            ]}
           />
           <bufferGeometry>
             <bufferAttribute
@@ -615,7 +634,11 @@ function FBOSlimeMold() {
         <mesh>
           <trailMaterial
             ref={trailMaterialRefA}
-            args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
+            args={[
+              DISPLAY_TEXTURE_WIDTH,
+              DISPLAY_TEXTURE_HEIGHT,
+              trailUniforms,
+            ]}
           />
           <bufferGeometry>
             <bufferAttribute
@@ -640,7 +663,11 @@ function FBOSlimeMold() {
         <mesh>
           <trailMaterial
             ref={trailMaterialRefB}
-            args={[DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT]}
+            args={[
+              DISPLAY_TEXTURE_WIDTH,
+              DISPLAY_TEXTURE_HEIGHT,
+              trailUniforms,
+            ]}
           />
           <bufferGeometry>
             <bufferAttribute
