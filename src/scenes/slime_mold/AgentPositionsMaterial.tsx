@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { DEFAULT_AGENT_POSITIONS_UNIFORMS } from "./consts";
 import fragmentShader from "./shaders/agentPositions/agentPositions.frag";
 import vertexShader from "./shaders/agentPositions/agentPositions.vert";
 
@@ -16,7 +15,11 @@ function getData(width: number, height: number) {
 }
 
 class AgentPositionsMaterial extends THREE.ShaderMaterial {
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    uniforms: { [uniform: string]: THREE.IUniform },
+  ) {
     const agentPositionsTexture = new THREE.DataTexture(
       getData(width, height),
       width,
@@ -27,7 +30,7 @@ class AgentPositionsMaterial extends THREE.ShaderMaterial {
     agentPositionsTexture.needsUpdate = true;
 
     const agentPositionsUniforms = {
-      ...DEFAULT_AGENT_POSITIONS_UNIFORMS,
+      ...uniforms,
       uAgentPositionsTexture: { value: agentPositionsTexture },
     };
 

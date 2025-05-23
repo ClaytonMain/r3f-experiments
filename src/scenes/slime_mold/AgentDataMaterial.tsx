@@ -1,15 +1,17 @@
 import * as THREE from "three";
-import {
-  DEFAULT_AGENT_DATA_UNIFORMS,
-  DISPLAY_TEXTURE_HEIGHT,
-  DISPLAY_TEXTURE_WIDTH,
-} from "./consts";
+import { DISPLAY_TEXTURE_HEIGHT, DISPLAY_TEXTURE_WIDTH } from "./consts";
 import fragmentShader from "./shaders/agentData/agentData.frag";
 import vertexShader from "./shaders/agentData/agentData.vert";
 
-function getData(width: number, height: number) {
+function getData(
+  width: number,
+  height: number,
+  displayWidth: number,
+  displayHeight: number,
+  startType: number,
+) {
   const data = new Float32Array(width * height * 4);
-  const choice = Math.floor(Math.random() * 6);
+  const choice = startType === -1 ? Math.floor(Math.random() * 6) : startType;
   for (let i = 0; i < width * height; i++) {
     let x = 0.0;
     let y = 0.0;
@@ -30,9 +32,7 @@ function getData(width: number, height: number) {
     } else if (choice === 3) {
       z = Math.random();
       x =
-        0.5 +
-        (Math.cos(z * Math.PI * 2) * 0.4 * DISPLAY_TEXTURE_HEIGHT) /
-          DISPLAY_TEXTURE_WIDTH;
+        0.5 + (Math.cos(z * Math.PI * 2) * 0.4 * displayHeight) / displayWidth;
       y = 0.5 + Math.sin(z * Math.PI * 2) * 0.4;
       if (Math.random() > 0.1) {
         z = (z + 0.5) % 1;
@@ -40,10 +40,7 @@ function getData(width: number, height: number) {
     } else if (choice === 4) {
       const p = Math.random();
       const r = Math.random() * 0.4;
-      x =
-        0.5 +
-        (Math.cos(p * Math.PI * 2) * r * DISPLAY_TEXTURE_HEIGHT) /
-          DISPLAY_TEXTURE_WIDTH;
+      x = 0.5 + (Math.cos(p * Math.PI * 2) * r * displayHeight) / displayWidth;
       y = 0.5 + Math.sin(p * Math.PI * 2) * r;
       z = Math.random();
     } else if (choice === 5) {
@@ -62,9 +59,16 @@ function getData(width: number, height: number) {
 }
 
 class AgentDataMaterial extends THREE.ShaderMaterial {
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    uniforms: { [uniform: string]: THREE.IUniform },
+    displayWidth: number = DISPLAY_TEXTURE_WIDTH,
+    displayHeight: number = DISPLAY_TEXTURE_HEIGHT,
+    startType: number = -1,
+  ) {
     const agentDataTexture = new THREE.DataTexture(
-      getData(width, height),
+      getData(width, height, displayWidth, displayHeight, startType),
       width,
       height,
       THREE.RGBAFormat,
@@ -73,7 +77,7 @@ class AgentDataMaterial extends THREE.ShaderMaterial {
     agentDataTexture.needsUpdate = true;
 
     const agentDataUniforms = {
-      ...DEFAULT_AGENT_DATA_UNIFORMS,
+      ...uniforms,
       uAgentDataTexture: { value: agentDataTexture },
     };
 

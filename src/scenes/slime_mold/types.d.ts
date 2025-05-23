@@ -1,7 +1,7 @@
 import { ReactThreeFiber } from "@react-three/fiber";
-import { AgentDataMaterial } from "./AgentDataMaterial";
-import { AgentPositionsMaterial } from "./AgentPositionsMaterial";
-import { TrailMaterial } from "./TrailMaterial";
+import AgentDataMaterial from "./AgentDataMaterial";
+import AgentPositionsMaterial from "./AgentPositionsMaterial";
+import TrailMaterial from "./TrailMaterial";
 
 declare global {
   namespace React {

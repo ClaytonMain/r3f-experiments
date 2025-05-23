@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { DEFAULT_TRAIL_UNIFORMS } from "./consts";
 import fragmentShader from "./shaders/trail/trail.frag";
 import vertexShader from "./shaders/trail/trail.vert";
 
@@ -16,7 +15,11 @@ function getData(width: number, height: number) {
 }
 
 class TrailMaterial extends THREE.ShaderMaterial {
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    uniforms: { [uniform: string]: THREE.IUniform },
+  ) {
     const trailTexture = new THREE.DataTexture(
       getData(width, height),
       width,
@@ -27,7 +30,7 @@ class TrailMaterial extends THREE.ShaderMaterial {
     trailTexture.needsUpdate = true;
 
     const trailUniforms = {
-      ...DEFAULT_TRAIL_UNIFORMS,
+      ...uniforms,
       uTrailTexture: { value: trailTexture },
     };
 
