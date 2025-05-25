@@ -1,80 +1,24 @@
 import * as THREE from "three";
-import { DISPLAY_TEXTURE_HEIGHT, DISPLAY_TEXTURE_WIDTH } from "./consts";
+import { getAgentDataTexture } from "./dataTextureFunctions";
 import fragmentShader from "./shaders/agentData/agentData.frag";
 import vertexShader from "./shaders/agentData/agentData.vert";
 
-function getData(
-  width: number,
-  height: number,
-  displayWidth: number,
-  displayHeight: number,
-  startType: number,
-) {
-  const data = new Float32Array(width * height * 4);
-  const choice = startType === -1 ? Math.floor(Math.random() * 6) : startType;
-  for (let i = 0; i < width * height; i++) {
-    let x = 0.0;
-    let y = 0.0;
-    let z = 0.0;
-
-    if (choice === 0) {
-      x = Math.random();
-      y = Math.random();
-      z = Math.random();
-    } else if (choice === 1) {
-      x = Math.random();
-      y = Math.random();
-      z = Math.atan2(y * 2 - 1, x * 2 - 1) / Math.PI;
-    } else if (choice === 2) {
-      x = 0.5;
-      y = 0.5;
-      z = Math.random();
-    } else if (choice === 3) {
-      z = Math.random();
-      x =
-        0.5 + (Math.cos(z * Math.PI * 2) * 0.4 * displayHeight) / displayWidth;
-      y = 0.5 + Math.sin(z * Math.PI * 2) * 0.4;
-      if (Math.random() > 0.1) {
-        z = (z + 0.5) % 1;
-      }
-    } else if (choice === 4) {
-      const p = Math.random();
-      const r = Math.random() * 0.4;
-      x = 0.5 + (Math.cos(p * Math.PI * 2) * r * displayHeight) / displayWidth;
-      y = 0.5 + Math.sin(p * Math.PI * 2) * r;
-      z = Math.random();
-    } else if (choice === 5) {
-      x = Math.round(Math.random() * 2) * 0.5;
-      y = Math.round(Math.random() * 2) * 0.5;
-      z = Math.random();
-    }
-
-    const i4 = i * 4;
-    data[i4 + 0] = x;
-    data[i4 + 1] = y;
-    data[i4 + 2] = z;
-    data[i4 + 3] = 1.0;
-  }
-  return data;
-}
-
 class AgentDataMaterial extends THREE.ShaderMaterial {
   constructor(
-    width: number,
-    height: number,
+    gpuTextureWidth: number,
+    gpuTextureHeight: number,
     uniforms: { [uniform: string]: THREE.IUniform },
-    displayWidth: number = DISPLAY_TEXTURE_WIDTH,
-    displayHeight: number = DISPLAY_TEXTURE_HEIGHT,
+    displayWidth: number,
+    displayHeight: number,
     startType: number = -1,
   ) {
-    const agentDataTexture = new THREE.DataTexture(
-      getData(width, height, displayWidth, displayHeight, startType),
-      width,
-      height,
-      THREE.RGBAFormat,
-      THREE.FloatType,
+    const agentDataTexture = getAgentDataTexture(
+      gpuTextureWidth,
+      gpuTextureHeight,
+      displayWidth,
+      displayHeight,
+      startType,
     );
-    agentDataTexture.needsUpdate = true;
 
     const agentDataUniforms = {
       ...uniforms,
