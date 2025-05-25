@@ -15,6 +15,7 @@ import {
   getGaussRandomInControlBounds,
   GPU_TEXTURE_HEIGHT,
   GPU_TEXTURE_WIDTH,
+  RANDOMIZE_FUNCTION_KEYS,
 } from "./consts";
 import {
   getAgentDataTexture,
@@ -131,6 +132,10 @@ const trailUniforms = {
   uTime: { value: 0.0 },
 };
 
+const miscParameters = {
+  randomizeEveryNSeconds: 60,
+};
+
 interface SlimeMoldState {
   agentCount: number;
   gpuTextureWidth: number;
@@ -139,6 +144,15 @@ interface SlimeMoldState {
   displayTextureHeight: number;
   agentStartType: number;
 }
+
+const externalSlimeMoldState: SlimeMoldState = {
+  agentCount: GPU_TEXTURE_WIDTH * GPU_TEXTURE_HEIGHT,
+  gpuTextureWidth: GPU_TEXTURE_WIDTH,
+  gpuTextureHeight: GPU_TEXTURE_HEIGHT,
+  displayTextureWidth: DISPLAY_TEXTURE_WIDTH,
+  displayTextureHeight: DISPLAY_TEXTURE_HEIGHT,
+  agentStartType: -1,
+};
 
 interface SlimeMoldUpdateAgentCountAction {
   type: "update_agent_count";
@@ -172,6 +186,9 @@ function slimeMoldStateReducer(
 ): SlimeMoldState {
   switch (action.type) {
     case "update_agent_count":
+      externalSlimeMoldState.agentCount = action.agentCount;
+      externalSlimeMoldState.gpuTextureWidth = Math.sqrt(action.agentCount);
+      externalSlimeMoldState.gpuTextureHeight = Math.sqrt(action.agentCount);
       return {
         ...slimeMoldState,
         agentCount: action.agentCount,
@@ -179,12 +196,15 @@ function slimeMoldStateReducer(
         gpuTextureHeight: Math.sqrt(action.agentCount),
       };
     case "update_display_texture_resolution":
+      externalSlimeMoldState.displayTextureWidth = action.displayTextureWidth;
+      externalSlimeMoldState.displayTextureHeight = action.displayTextureHeight;
       return {
         ...slimeMoldState,
         displayTextureWidth: action.displayTextureWidth,
         displayTextureHeight: action.displayTextureHeight,
       };
     case "update_agent_start_type":
+      externalSlimeMoldState.agentStartType = action.agentStartType;
       return {
         ...slimeMoldState,
         agentStartType: action.agentStartType,
@@ -201,12 +221,7 @@ function slimeMoldStateReducer(
 
 function FBOSlimeMold() {
   const [slimeMoldState, dispatch] = useReducer(slimeMoldStateReducer, {
-    agentCount: GPU_TEXTURE_WIDTH * GPU_TEXTURE_HEIGHT,
-    gpuTextureWidth: GPU_TEXTURE_WIDTH,
-    gpuTextureHeight: GPU_TEXTURE_HEIGHT,
-    displayTextureWidth: DISPLAY_TEXTURE_WIDTH,
-    displayTextureHeight: DISPLAY_TEXTURE_HEIGHT,
-    agentStartType: -1,
+    ...externalSlimeMoldState,
   });
 
   function randomizeColorPalette() {
@@ -226,21 +241,22 @@ function FBOSlimeMold() {
       });
     });
   }
+
   function restartSimulation() {
     const newAgentDataTexture = getAgentDataTexture(
-      slimeMoldState.gpuTextureWidth,
-      slimeMoldState.gpuTextureHeight,
-      slimeMoldState.displayTextureWidth,
-      slimeMoldState.displayTextureHeight,
-      slimeMoldState.agentStartType,
+      externalSlimeMoldState.gpuTextureWidth,
+      externalSlimeMoldState.gpuTextureHeight,
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
+      externalSlimeMoldState.agentStartType,
     );
     const newAgentPositionsTexture = getAgentPositionsTexture(
-      slimeMoldState.displayTextureWidth,
-      slimeMoldState.displayTextureHeight,
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
     );
     const newTrailTexture = getTrailTexture(
-      slimeMoldState.displayTextureWidth,
-      slimeMoldState.displayTextureHeight,
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
     );
     agentDataUniforms.uAgentDataTexture.value.dispose();
     agentPositionsUniforms.uAgentDataTexture.value.dispose();
@@ -277,14 +293,93 @@ function FBOSlimeMold() {
       newAgentPositionsTexture;
     trailMaterialRefA.current.uniforms.uTrailTexture.value = newTrailTexture;
     trailMaterialRefB.current.uniforms.uTrailTexture.value = newTrailTexture;
+
+    uDeltaRef.current = 0.0;
+    uTimeRef.current = 0.0;
+    timeSinceRandomizeRef.current = 0;
+  }
+
+  function randomizeSimulation() {
+    RANDOMIZE_FUNCTION_KEYS.forEach((key) => {
+      // @ts-expect-error - The key is valid.
+      const newValue = getGaussRandomInControlBounds(key);
+      if (key in agentDataUniforms) {
+        // @ts-expect-error - The key is valid.
+        agentDataUniforms[key].value = newValue;
+      } else if (key in agentPositionsUniforms) {
+        // @ts-expect-error - The key is valid.
+        agentPositionsUniforms[key].value = newValue;
+      } else if (key in trailUniforms) {
+        // @ts-expect-error - The key is valid.
+        trailUniforms[key].value = newValue;
+      }
+      setControls({
+        [`slimeMold_${key}`]: newValue,
+      });
+    });
+    randomizeColorPalette();
+    restartSimulation();
+    uDeltaRef.current = 0.0;
+    uTimeRef.current = 0.0;
+    timeSinceRandomizeRef.current = 0;
   }
 
   const [, setControls] = useControls(() => ({
     "Quick Controls": folder({
-      "Randomize Color Palette": button(() => randomizeColorPalette()),
+      "Randomize Color Palette [SMold QC]": button(() =>
+        randomizeColorPalette(),
+      ),
+      "Restart Simulation [SMold QC]": button(() => restartSimulation()),
+      "Randomize Simulation [SMold QC]": button(() => randomizeSimulation()),
+      slimeMold_agentCount_quickControls: {
+        label: "Agent Count",
+        value: slimeMoldState.agentCount,
+        options: [128 * 128, 256 * 256, 512 * 512, 768 * 768, 1024 * 1024],
+        onChange: (value) => {
+          dispatch({
+            type: "update_agent_count",
+            agentCount: value,
+          });
+          setControls({
+            // @ts-expect-error - The key is valid.
+            slimeMold_agentCount: value,
+          });
+        },
+      },
+      slimeMold_displayTextureResolution_quickControls: {
+        label: "Display Texture Resolution",
+        value: `${slimeMoldState.displayTextureWidth} x ${slimeMoldState.displayTextureHeight}`,
+        options: [
+          "640 x 480",
+          "800 x 600",
+          "1280 x 720",
+          "1920 x 1080",
+          "2560 x 1440",
+          "3840 x 2160",
+        ],
+        onChange: (stringValue) => {
+          const [width, height] = stringValue.split(" x ").map(Number);
+          const value = new THREE.Vector2(width, height);
+          dispatch({
+            type: "update_display_texture_resolution",
+            displayTextureWidth: width,
+            displayTextureHeight: height,
+          });
+          agentDataUniforms.uDisplayTextureResolution.value = value;
+          slimeMoldDisplayPlaneUniforms.uDisplayTextureResolution.value = value;
+          agentPositionsUniforms.uDisplayTextureResolution.value = value;
+          trailUniforms.uDisplayTextureResolution.value = value;
+          setControls({
+            // @ts-expect-error - The key is valid.
+            slimeMold_displayTextureResolution: stringValue,
+          });
+        },
+      },
     }),
     "Simulation Controls": folder(
       {
+        "Restart Simulation [SMold]": button(() => restartSimulation()),
+        "Randomize Simulation [SMold]": button(() => randomizeSimulation()),
         slimeMold_simulationSpeed: {
           label: "Simulation Speed",
           value: DEFAULT_SIMULATION_SPEED,
@@ -294,9 +389,16 @@ function FBOSlimeMold() {
             simulationSpeedRef.current = value;
           },
         },
-        "Restart Simulation": button(() => restartSimulation()),
+        slimeMold_randomizeEveryNSeconds: {
+          label: "Randomize Every N Seconds",
+          value: 60,
+          step: 1,
+          onChange: (value) => {
+            miscParameters.randomizeEveryNSeconds = value;
+          },
+        },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Agent Parameters": folder(
       {
@@ -308,6 +410,10 @@ function FBOSlimeMold() {
             dispatch({
               type: "update_agent_count",
               agentCount: value,
+            });
+            setControls({
+              // @ts-expect-error - The key is valid.
+              slimeMold_agentCount_quickControls: value,
             });
           },
         },
@@ -395,7 +501,7 @@ function FBOSlimeMold() {
           },
         },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Trail Parameters": folder(
       {
@@ -423,6 +529,10 @@ function FBOSlimeMold() {
               value;
             agentPositionsUniforms.uDisplayTextureResolution.value = value;
             trailUniforms.uDisplayTextureResolution.value = value;
+            setControls({
+              // @ts-expect-error - The key is valid.
+              slimeMold_displayTextureResolution_quickControls: stringValue,
+            });
           },
         },
         slimeMold_uDecayRate: {
@@ -454,7 +564,7 @@ function FBOSlimeMold() {
           },
         },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Boundary Parameters": folder(
       {
@@ -618,7 +728,9 @@ function FBOSlimeMold() {
             slimeMoldDisplayPlaneUniforms.uPaletteD.value.z = value;
           },
         },
-        "Randomize Color Palette": button(() => randomizeColorPalette()),
+        "Randomize Color Palette [SMold]": button(() =>
+          randomizeColorPalette(),
+        ),
       },
       { collapsed: true },
     ),
@@ -627,6 +739,7 @@ function FBOSlimeMold() {
   const viewport = useThree((state) => state.viewport);
 
   const simulationSpeedRef = useRef(DEFAULT_SIMULATION_SPEED);
+  const timeSinceRandomizeRef = useRef(0);
 
   const agentDataMaterialRefA = useRef<AgentDataMaterial>(null!);
   const agentDataMaterialRefB = useRef<AgentDataMaterial>(null!);
@@ -790,6 +903,14 @@ function FBOSlimeMold() {
   const uTimeRef = useRef(0.0);
 
   useFrame(({ gl }, delta) => {
+    timeSinceRandomizeRef.current += delta;
+    if (
+      timeSinceRandomizeRef.current >= miscParameters.randomizeEveryNSeconds &&
+      miscParameters.randomizeEveryNSeconds > 0
+    ) {
+      randomizeSimulation();
+      timeSinceRandomizeRef.current = 0;
+    }
     uDeltaRef.current = Math.min(delta * simulationSpeedRef.current, 0.1);
     uTimeRef.current += uDeltaRef.current;
 
@@ -878,18 +999,6 @@ function FBOSlimeMold() {
 
     pingPongRef.current = !pingPongRef.current;
   });
-
-  useEffect(() => {
-    const timer = setInterval(
-      () => {
-        randomizeColorPalette();
-        restartSimulation();
-      },
-      1000 * 60 * 1,
-    );
-    return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <>

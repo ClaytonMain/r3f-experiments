@@ -21,21 +21,23 @@ void main() {
     // vec4 agentPositionData = texture2D(uAgentPositionsTexture, vUv);
 
     float intensity = trailData.x;
-    float lastAgentDirection = trailData.y;
 
     float avgIntensity = 0.0;
+    float avgLastAgentDirection = 0.0;
     for (float i = -2.0; i <= 2.0; i++) {
         for (float j = -2.0; j <= 2.0; j++) {
             vec2 offset = vec2(i, j) / uDisplayTextureResolution;
             vec4 neighborData = texture2D(uTrailTexture, vUv + offset);
             avgIntensity += neighborData.x;
+            avgLastAgentDirection += neighborData.y;
         }
     }
     avgIntensity /= 25.0;
+    avgLastAgentDirection /= 25.0;
 
-    avgIntensity = mix(intensity, avgIntensity, 0.2);
+    avgIntensity = mix(intensity, avgIntensity, 0.4);
 
-    vec3 color = palette(mod((avgIntensity + lastAgentDirection + uTime * 0.05 + (vUv.x + vUv.y) * 0.5) * 0.2, 1.0)) * (avgIntensity * (intensity * 0.5 + 0.3));
+    vec3 color = palette(mod((avgIntensity + avgLastAgentDirection * 0.2 + uTime * 0.05 + (vUv.x + vUv.y) * 0.5) * 0.2, 1.0)) * (avgIntensity * (intensity * 0.5 + 0.3));
 
     // gl_FragColor = vec4(palette(mod(intensity + uTime * 0.05 + (vUv.x + vUv.y) * 0.01, 1.0)) * intensity, 1.0);
     gl_FragColor = vec4(color, 1.0);
