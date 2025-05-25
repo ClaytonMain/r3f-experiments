@@ -1,7 +1,7 @@
 import { Plane, useFBO } from "@react-three/drei";
 import { createPortal, extend, useFrame, useThree } from "@react-three/fiber";
 import { button, folder, useControls } from "leva";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import * as THREE from "three";
 import AgentDataMaterial from "./AgentDataMaterial";
 import AgentPositionsMaterial from "./AgentPositionsMaterial";
@@ -15,7 +15,13 @@ import {
   getGaussRandomInControlBounds,
   GPU_TEXTURE_HEIGHT,
   GPU_TEXTURE_WIDTH,
+  RANDOMIZE_FUNCTION_KEYS,
 } from "./consts";
+import {
+  getAgentDataTexture,
+  getAgentPositionsTexture,
+  getTrailTexture,
+} from "./dataTextureFunctions";
 import displayFragmentShader from "./shaders/display/display.frag";
 import displayVertexShader from "./shaders/display/display.vert";
 
@@ -28,6 +34,14 @@ extend({ AgentDataMaterial, AgentPositionsMaterial, TrailMaterial });
 // Also credit to this person for the idea of using points for the trail:
 // https://kaesve.nl/projects/mold/summary.html
 
+const agentStartTypes = [
+  "Center",
+  "Ring",
+  "9 Rings",
+  "Circle",
+  "Spiral",
+  "Fill",
+];
 const boundaryBehaviors = ["Wrap", "Bounce"];
 const texturePlaneUniforms = {
   uResolution: new THREE.Uniform(new THREE.Vector2(800, 800)),
@@ -118,13 +132,97 @@ const trailUniforms = {
   uTime: { value: 0.0 },
 };
 
+const miscParameters = {
+  randomizeEveryNSeconds: 60,
+};
+
+interface SlimeMoldState {
+  agentCount: number;
+  gpuTextureWidth: number;
+  gpuTextureHeight: number;
+  displayTextureWidth: number;
+  displayTextureHeight: number;
+  agentStartType: number;
+}
+
+const externalSlimeMoldState: SlimeMoldState = {
+  agentCount: GPU_TEXTURE_WIDTH * GPU_TEXTURE_HEIGHT,
+  gpuTextureWidth: GPU_TEXTURE_WIDTH,
+  gpuTextureHeight: GPU_TEXTURE_HEIGHT,
+  displayTextureWidth: DISPLAY_TEXTURE_WIDTH,
+  displayTextureHeight: DISPLAY_TEXTURE_HEIGHT,
+  agentStartType: -1,
+};
+
+interface SlimeMoldUpdateAgentCountAction {
+  type: "update_agent_count";
+  agentCount: number;
+}
+
+interface SlimeMoldUpdateDisplayTextureResolutionAction {
+  type: "update_display_texture_resolution";
+  displayTextureWidth: number;
+  displayTextureHeight: number;
+}
+
+interface SlimeMoldUpdateAgentStartTypeAction {
+  type: "update_agent_start_type";
+  agentStartType: number;
+}
+
+interface SlimeMoldRestartSimulationAction {
+  type: "restart_simulation";
+}
+
+type SlimeMoldStateReducerAction =
+  | SlimeMoldUpdateAgentCountAction
+  | SlimeMoldUpdateDisplayTextureResolutionAction
+  | SlimeMoldUpdateAgentStartTypeAction
+  | SlimeMoldRestartSimulationAction;
+
+function slimeMoldStateReducer(
+  slimeMoldState: SlimeMoldState,
+  action: SlimeMoldStateReducerAction,
+): SlimeMoldState {
+  switch (action.type) {
+    case "update_agent_count":
+      externalSlimeMoldState.agentCount = action.agentCount;
+      externalSlimeMoldState.gpuTextureWidth = Math.sqrt(action.agentCount);
+      externalSlimeMoldState.gpuTextureHeight = Math.sqrt(action.agentCount);
+      return {
+        ...slimeMoldState,
+        agentCount: action.agentCount,
+        gpuTextureWidth: Math.sqrt(action.agentCount),
+        gpuTextureHeight: Math.sqrt(action.agentCount),
+      };
+    case "update_display_texture_resolution":
+      externalSlimeMoldState.displayTextureWidth = action.displayTextureWidth;
+      externalSlimeMoldState.displayTextureHeight = action.displayTextureHeight;
+      return {
+        ...slimeMoldState,
+        displayTextureWidth: action.displayTextureWidth,
+        displayTextureHeight: action.displayTextureHeight,
+      };
+    case "update_agent_start_type":
+      externalSlimeMoldState.agentStartType = action.agentStartType;
+      return {
+        ...slimeMoldState,
+        agentStartType: action.agentStartType,
+      };
+    case "restart_simulation":
+      return {
+        ...slimeMoldState,
+      };
+    default:
+      // @ts-expect-error - Just in case.
+      throw new Error(`Unknown action type: ${action.type}`);
+  }
+}
+
 function FBOSlimeMold() {
-  const [agentCount, setAgentCount] = useState(
-    GPU_TEXTURE_WIDTH * GPU_TEXTURE_HEIGHT,
-  );
-  const [displayTextureResolution, setDisplayTextureResolution] = useState(
-    new THREE.Vector2(DISPLAY_TEXTURE_WIDTH, DISPLAY_TEXTURE_HEIGHT),
-  );
+  const [slimeMoldState, dispatch] = useReducer(slimeMoldStateReducer, {
+    ...externalSlimeMoldState,
+  });
 
   function randomizeColorPalette() {
     const keys = ["uPaletteA", "uPaletteB", "uPaletteC", "uPaletteD"];
@@ -143,17 +241,145 @@ function FBOSlimeMold() {
       });
     });
   }
-  // function restartSimulation() {
-  //   agentDataUniforms.uAgentDataTexture.value.dispose();
-  //   agentPositionsUniforms.uAgentDataTexture.value.dispose();
-  //   trailUniforms.uTrailTexture.value.dispose();
-  // }
+
+  function restartSimulation() {
+    const newAgentDataTexture = getAgentDataTexture(
+      externalSlimeMoldState.gpuTextureWidth,
+      externalSlimeMoldState.gpuTextureHeight,
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
+      externalSlimeMoldState.agentStartType,
+    );
+    const newAgentPositionsTexture = getAgentPositionsTexture(
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
+    );
+    const newTrailTexture = getTrailTexture(
+      externalSlimeMoldState.displayTextureWidth,
+      externalSlimeMoldState.displayTextureHeight,
+    );
+    agentDataUniforms.uAgentDataTexture.value.dispose();
+    agentPositionsUniforms.uAgentDataTexture.value.dispose();
+    trailUniforms.uTrailTexture.value.dispose();
+
+    // agentDataUniforms.uAgentDataTexture.value = newAgentDataTexture;
+    // agentDataUniforms.uAgentPositionsTexture.value = newAgentPositionsTexture;
+    // agentDataUniforms.uTrailTexture.value = newTrailTexture;
+
+    agentDataMaterialRefA.current.uniforms.uAgentDataTexture.value =
+      newAgentDataTexture;
+    agentDataMaterialRefB.current.uniforms.uAgentDataTexture.value =
+      newAgentDataTexture;
+    agentDataMaterialRefA.current.uniforms.uAgentPositionsTexture.value =
+      newAgentPositionsTexture;
+    agentDataMaterialRefB.current.uniforms.uAgentPositionsTexture.value =
+      newAgentPositionsTexture;
+    agentDataMaterialRefA.current.uniforms.uTrailTexture.value =
+      newTrailTexture;
+    agentDataMaterialRefB.current.uniforms.uTrailTexture.value =
+      newTrailTexture;
+
+    // agentPositionsUniforms.uAgentDataTexture.value = newAgentDataTexture;
+
+    agentPositionsMaterialRef.current.uniforms.uAgentDataTexture.value =
+      newAgentDataTexture;
+
+    // trailUniforms.uAgentPositionsTexture.value = newAgentPositionsTexture;
+    // trailUniforms.uTrailTexture.value = newTrailTexture;
+
+    trailMaterialRefA.current.uniforms.uAgentPositionsTexture.value =
+      newAgentPositionsTexture;
+    trailMaterialRefB.current.uniforms.uAgentPositionsTexture.value =
+      newAgentPositionsTexture;
+    trailMaterialRefA.current.uniforms.uTrailTexture.value = newTrailTexture;
+    trailMaterialRefB.current.uniforms.uTrailTexture.value = newTrailTexture;
+
+    uDeltaRef.current = 0.0;
+    uTimeRef.current = 0.0;
+    timeSinceRandomizeRef.current = 0;
+  }
+
+  function randomizeSimulation() {
+    RANDOMIZE_FUNCTION_KEYS.forEach((key) => {
+      // @ts-expect-error - The key is valid.
+      const newValue = getGaussRandomInControlBounds(key);
+      if (key in agentDataUniforms) {
+        // @ts-expect-error - The key is valid.
+        agentDataUniforms[key].value = newValue;
+      } else if (key in agentPositionsUniforms) {
+        // @ts-expect-error - The key is valid.
+        agentPositionsUniforms[key].value = newValue;
+      } else if (key in trailUniforms) {
+        // @ts-expect-error - The key is valid.
+        trailUniforms[key].value = newValue;
+      }
+      setControls({
+        [`slimeMold_${key}`]: newValue,
+      });
+    });
+    randomizeColorPalette();
+    restartSimulation();
+    uDeltaRef.current = 0.0;
+    uTimeRef.current = 0.0;
+    timeSinceRandomizeRef.current = 0;
+  }
+
   const [, setControls] = useControls(() => ({
     "Quick Controls": folder({
-      "Randomize Color Palette": button(() => randomizeColorPalette()),
+      "Randomize Color Palette [SMold QC]": button(() =>
+        randomizeColorPalette(),
+      ),
+      "Restart Simulation [SMold QC]": button(() => restartSimulation()),
+      "Randomize Simulation [SMold QC]": button(() => randomizeSimulation()),
+      slimeMold_agentCount_quickControls: {
+        label: "Agent Count",
+        value: slimeMoldState.agentCount,
+        options: [128 * 128, 256 * 256, 512 * 512, 768 * 768, 1024 * 1024],
+        onChange: (value) => {
+          dispatch({
+            type: "update_agent_count",
+            agentCount: value,
+          });
+          setControls({
+            // @ts-expect-error - The key is valid.
+            slimeMold_agentCount: value,
+          });
+        },
+      },
+      slimeMold_displayTextureResolution_quickControls: {
+        label: "Display Texture Resolution",
+        value: `${slimeMoldState.displayTextureWidth} x ${slimeMoldState.displayTextureHeight}`,
+        options: [
+          "640 x 480",
+          "800 x 600",
+          "1280 x 720",
+          "1920 x 1080",
+          "2560 x 1440",
+          "3840 x 2160",
+        ],
+        onChange: (stringValue) => {
+          const [width, height] = stringValue.split(" x ").map(Number);
+          const value = new THREE.Vector2(width, height);
+          dispatch({
+            type: "update_display_texture_resolution",
+            displayTextureWidth: width,
+            displayTextureHeight: height,
+          });
+          agentDataUniforms.uDisplayTextureResolution.value = value;
+          slimeMoldDisplayPlaneUniforms.uDisplayTextureResolution.value = value;
+          agentPositionsUniforms.uDisplayTextureResolution.value = value;
+          trailUniforms.uDisplayTextureResolution.value = value;
+          setControls({
+            // @ts-expect-error - The key is valid.
+            slimeMold_displayTextureResolution: stringValue,
+          });
+        },
+      },
     }),
     "Simulation Controls": folder(
       {
+        "Restart Simulation [SMold]": button(() => restartSimulation()),
+        "Randomize Simulation [SMold]": button(() => randomizeSimulation()),
         slimeMold_simulationSpeed: {
           label: "Simulation Speed",
           value: DEFAULT_SIMULATION_SPEED,
@@ -163,17 +389,52 @@ function FBOSlimeMold() {
             simulationSpeedRef.current = value;
           },
         },
+        slimeMold_randomizeEveryNSeconds: {
+          label: "Randomize Every N Seconds",
+          value: 60,
+          step: 1,
+          onChange: (value) => {
+            miscParameters.randomizeEveryNSeconds = value;
+          },
+        },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Agent Parameters": folder(
       {
         slimeMold_agentCount: {
           label: "Agent Count",
-          value: agentCount,
+          value: slimeMoldState.agentCount,
           options: [128 * 128, 256 * 256, 512 * 512, 768 * 768, 1024 * 1024],
           onChange: (value) => {
-            setAgentCount(value);
+            dispatch({
+              type: "update_agent_count",
+              agentCount: value,
+            });
+            setControls({
+              // @ts-expect-error - The key is valid.
+              slimeMold_agentCount_quickControls: value,
+            });
+          },
+        },
+        slimeMold_agentStartType: {
+          label: "Agent Start Type",
+          value: "Random",
+          options: [
+            "Random",
+            "Center",
+            "Ring",
+            "9 Rings",
+            "Circle",
+            "Spiral",
+            "Fill",
+          ],
+          onChange: (value) => {
+            const startType = agentStartTypes.indexOf(value);
+            dispatch({
+              type: "update_agent_start_type",
+              agentStartType: startType,
+            });
           },
         },
         slimeMold_uSensorAngle: {
@@ -240,13 +501,13 @@ function FBOSlimeMold() {
           },
         },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Trail Parameters": folder(
       {
         slimeMold_displayTextureResolution: {
           label: "Display Texture Resolution",
-          value: `${displayTextureResolution.x} x ${displayTextureResolution.y}`,
+          value: `${slimeMoldState.displayTextureWidth} x ${slimeMoldState.displayTextureHeight}`,
           options: [
             "640 x 480",
             "800 x 600",
@@ -258,12 +519,20 @@ function FBOSlimeMold() {
           onChange: (stringValue) => {
             const [width, height] = stringValue.split(" x ").map(Number);
             const value = new THREE.Vector2(width, height);
-            setDisplayTextureResolution(value);
+            dispatch({
+              type: "update_display_texture_resolution",
+              displayTextureWidth: width,
+              displayTextureHeight: height,
+            });
             agentDataUniforms.uDisplayTextureResolution.value = value;
             slimeMoldDisplayPlaneUniforms.uDisplayTextureResolution.value =
               value;
             agentPositionsUniforms.uDisplayTextureResolution.value = value;
             trailUniforms.uDisplayTextureResolution.value = value;
+            setControls({
+              // @ts-expect-error - The key is valid.
+              slimeMold_displayTextureResolution_quickControls: stringValue,
+            });
           },
         },
         slimeMold_uDecayRate: {
@@ -295,7 +564,7 @@ function FBOSlimeMold() {
           },
         },
       },
-      { collapsed: false },
+      { collapsed: true },
     ),
     "Boundary Parameters": folder(
       {
@@ -459,7 +728,9 @@ function FBOSlimeMold() {
             slimeMoldDisplayPlaneUniforms.uPaletteD.value.z = value;
           },
         },
-        "Randomize Color Palette": button(() => randomizeColorPalette()),
+        "Randomize Color Palette [SMold]": button(() =>
+          randomizeColorPalette(),
+        ),
       },
       { collapsed: true },
     ),
@@ -468,6 +739,7 @@ function FBOSlimeMold() {
   const viewport = useThree((state) => state.viewport);
 
   const simulationSpeedRef = useRef(DEFAULT_SIMULATION_SPEED);
+  const timeSinceRandomizeRef = useRef(0);
 
   const agentDataMaterialRefA = useRef<AgentDataMaterial>(null!);
   const agentDataMaterialRefB = useRef<AgentDataMaterial>(null!);
@@ -495,13 +767,13 @@ function FBOSlimeMold() {
     () =>
       new THREE.OrthographicCamera(
         0,
-        displayTextureResolution.x,
-        displayTextureResolution.y,
+        slimeMoldState.displayTextureWidth,
+        slimeMoldState.displayTextureHeight,
         0,
         1 / Math.pow(2, 53),
         1,
       ),
-    [displayTextureResolution],
+    [slimeMoldState.displayTextureWidth, slimeMoldState.displayTextureHeight],
   );
 
   const renderPlanePositions = useMemo(
@@ -517,8 +789,8 @@ function FBOSlimeMold() {
   );
 
   const agentDataRenderTargetA = useFBO(
-    Math.sqrt(agentCount),
-    Math.sqrt(agentCount),
+    slimeMoldState.gpuTextureWidth,
+    slimeMoldState.gpuTextureHeight,
     {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
@@ -528,8 +800,8 @@ function FBOSlimeMold() {
     },
   );
   const agentDataRenderTargetB = useFBO(
-    Math.sqrt(agentCount),
-    Math.sqrt(agentCount),
+    slimeMoldState.gpuTextureWidth,
+    slimeMoldState.gpuTextureHeight,
     {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
@@ -539,8 +811,8 @@ function FBOSlimeMold() {
     },
   );
   const agentPositionsRenderTarget = useFBO(
-    displayTextureResolution.x,
-    displayTextureResolution.y,
+    slimeMoldState.displayTextureWidth,
+    slimeMoldState.displayTextureHeight,
     {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
@@ -550,8 +822,8 @@ function FBOSlimeMold() {
     },
   );
   const trailRenderTargetA = useFBO(
-    displayTextureResolution.x,
-    displayTextureResolution.y,
+    slimeMoldState.displayTextureWidth,
+    slimeMoldState.displayTextureHeight,
     {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
@@ -561,8 +833,8 @@ function FBOSlimeMold() {
     },
   );
   const trailRenderTargetB = useFBO(
-    displayTextureResolution.x,
-    displayTextureResolution.y,
+    slimeMoldState.displayTextureWidth,
+    slimeMoldState.displayTextureHeight,
     {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
@@ -573,26 +845,24 @@ function FBOSlimeMold() {
   );
 
   const agentPositionsAttribute = useMemo(() => {
-    const length = agentCount;
-    const side = Math.sqrt(length);
+    const length = slimeMoldState.agentCount;
     const attributes = new Float32Array(length * 3);
     for (let i = 0; i < length; i++) {
       const i3 = i * 3;
-      attributes[i3 + 0] = (i % side) / side;
-      attributes[i3 + 1] = Math.floor(i / side) / side;
+      attributes[i3 + 0] =
+        (i % slimeMoldState.displayTextureWidth) /
+        slimeMoldState.displayTextureHeight;
+      attributes[i3 + 1] =
+        Math.floor(i / slimeMoldState.displayTextureWidth) /
+        slimeMoldState.displayTextureHeight;
       attributes[i3 + 2] = 0;
     }
     return attributes;
-  }, [agentCount]);
-
-  // useEffect(() => {
-  //   const timer = setTimeout(function () {
-  //     location.reload();
-  //   }, 300000);
-  //   return () => {
-  //     clearTimeout(timer);
-  //   };
-  // }, []);
+  }, [
+    slimeMoldState.agentCount,
+    slimeMoldState.displayTextureWidth,
+    slimeMoldState.displayTextureHeight,
+  ]);
 
   useEffect(() => {
     if (viewport.width && viewport.height) {
@@ -605,7 +875,7 @@ function FBOSlimeMold() {
 
   useEffect(() => {
     const targetAspect =
-      displayTextureResolution.x / displayTextureResolution.y;
+      slimeMoldState.displayTextureWidth / slimeMoldState.displayTextureHeight;
     const windowAspect = window.innerWidth / window.innerHeight;
 
     // If windowAspect > targetAspect scale x, otherwise scale y
@@ -621,13 +891,26 @@ function FBOSlimeMold() {
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [window.innerWidth, window.innerHeight]);
+  }, [
+    window.innerWidth,
+    window.innerHeight,
+    slimeMoldState.displayTextureWidth,
+    slimeMoldState.displayTextureHeight,
+  ]);
 
   const pingPongRef = useRef(true);
   const uDeltaRef = useRef(0.0);
   const uTimeRef = useRef(0.0);
 
   useFrame(({ gl }, delta) => {
+    timeSinceRandomizeRef.current += delta;
+    if (
+      timeSinceRandomizeRef.current >= miscParameters.randomizeEveryNSeconds &&
+      miscParameters.randomizeEveryNSeconds > 0
+    ) {
+      randomizeSimulation();
+      timeSinceRandomizeRef.current = 0;
+    }
     uDeltaRef.current = Math.min(delta * simulationSpeedRef.current, 0.1);
     uTimeRef.current += uDeltaRef.current;
 
@@ -724,11 +1007,12 @@ function FBOSlimeMold() {
           <agentDataMaterial
             ref={agentDataMaterialRefA}
             args={[
-              Math.sqrt(agentCount),
-              Math.sqrt(agentCount),
+              slimeMoldState.gpuTextureWidth,
+              slimeMoldState.gpuTextureHeight,
               agentDataUniforms,
-              displayTextureResolution.x,
-              displayTextureResolution.y,
+              slimeMoldState.displayTextureWidth,
+              slimeMoldState.displayTextureHeight,
+              slimeMoldState.agentStartType,
             ]}
           />
           <bufferGeometry>
@@ -755,11 +1039,12 @@ function FBOSlimeMold() {
           <agentDataMaterial
             ref={agentDataMaterialRefB}
             args={[
-              Math.sqrt(agentCount),
-              Math.sqrt(agentCount),
+              slimeMoldState.gpuTextureWidth,
+              slimeMoldState.gpuTextureHeight,
               agentDataUniforms,
-              displayTextureResolution.x,
-              displayTextureResolution.y,
+              slimeMoldState.displayTextureWidth,
+              slimeMoldState.displayTextureHeight,
+              slimeMoldState.agentStartType,
             ]}
           />
           <bufferGeometry>
@@ -786,8 +1071,8 @@ function FBOSlimeMold() {
           <agentPositionsMaterial
             ref={agentPositionsMaterialRef}
             args={[
-              displayTextureResolution.x,
-              displayTextureResolution.y,
+              slimeMoldState.displayTextureWidth,
+              slimeMoldState.displayTextureHeight,
               agentPositionsUniforms,
             ]}
           />
@@ -808,8 +1093,8 @@ function FBOSlimeMold() {
           <trailMaterial
             ref={trailMaterialRefA}
             args={[
-              displayTextureResolution.x,
-              displayTextureResolution.y,
+              slimeMoldState.displayTextureWidth,
+              slimeMoldState.displayTextureHeight,
               trailUniforms,
             ]}
           />
@@ -837,8 +1122,8 @@ function FBOSlimeMold() {
           <trailMaterial
             ref={trailMaterialRefB}
             args={[
-              displayTextureResolution.x,
-              displayTextureResolution.y,
+              slimeMoldState.displayTextureWidth,
+              slimeMoldState.displayTextureHeight,
               trailUniforms,
             ]}
           />
