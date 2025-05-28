@@ -31,13 +31,13 @@ void main() {
 
     vec3 color = vec3(1.0);
 
-    if(uColorMode == 0) {
+    if (uColorMode == 0) {
         // Single color
         color = uColor1;
-    } else if(uColorMode == 1) {
+    } else if (uColorMode == 1) {
         // Double color
         color = mix(uColor1, uColor2, smoothBetween(uBlendCenter + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
-    } else if(uColorMode == 2) {
+    } else if (uColorMode == 2) {
         // Triple color
         color = mix(uColor1, uColor2, smoothBetween(uBlendCenter - uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
         color = mix(color, uColor3, smoothBetween(uBlendCenter + uBlendScale + uBlendSharpness * 0.5, 1.0, uBlendSharpness, vPositionLength));
@@ -48,7 +48,7 @@ void main() {
 
     // vec3 velocityColor = hsv2rgb(vec3(smoothstep(0.0, 0.8, length(vVelocityLength)), 1.0, vLife * 0.5 + 0.5));
     // vec3 color = velocityColor;
-    
+
     // float a = alpha * (1.0 - pow(max(0.0, abs(vPositionLength * 1.1) * 2.0 - 1.0), 3.0));
     float a = alpha * (1.0 - abs(vPositionLength * vPositionLength * vPositionLength));
 
