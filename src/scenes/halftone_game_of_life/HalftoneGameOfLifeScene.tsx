@@ -1,4 +1,4 @@
-import { Stats } from "@react-three/drei";
+import { OrbitControls, Stats } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect } from "react";
 import Footer from "../../components/Footer";
@@ -20,23 +20,24 @@ export default function HalftoneGameOfLifeScene() {
           toneMappingExposure: 1.5,
         }}
         className="touch-none"
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        dpr={1}
         shadows
         camera={{
           fov: 45,
-          near: 0.1,
-          far: 200,
+          near: 0.001,
+          far: 20,
           position: [0, 0, 8],
         }}
         style={{ background: backgroundColor }}
       >
         <Suspense fallback={null}>
+          <OrbitControls />
           <ambientLight color={"#fff"} intensity={0.5} />
           <HalftoneGameOfLife />
           <Stats />
         </Suspense>
       </Canvas>
-      <Footer />
+      <Footer information={"I really had hoped this would look cooler..."} />
     </>
   );
 }
