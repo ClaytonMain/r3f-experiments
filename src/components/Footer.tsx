@@ -63,7 +63,7 @@ function Information({
               <span className="sr-only">Close modal</span>
             </button>
           </div>
-          <div className="space-y-4 p-4 md:p-5">{information}</div>
+          <div className="space-y-4 p-4 text-white md:p-5">{information}</div>
         </motion.div>
       </div>
     </motion.div>
