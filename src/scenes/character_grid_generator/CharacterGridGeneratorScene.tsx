@@ -23,11 +23,12 @@ export default function CharacterGridGeneratorScene() {
         dpr={Math.min(window.devicePixelRatio, 2)}
         shadows
         camera={{
-          fov: 45,
+          zoom: 25,
           near: 0.1,
-          far: 200,
-          position: [0, 0, 8],
+          far: 20,
+          position: [0, 0, 10],
         }}
+        orthographic
         style={{ background: backgroundColor }}
       >
         <Suspense fallback={null}>
