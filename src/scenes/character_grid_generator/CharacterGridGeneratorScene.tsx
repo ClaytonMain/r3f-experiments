@@ -20,7 +20,7 @@ export default function CharacterGridGeneratorScene() {
           toneMappingExposure: 1.5,
         }}
         className="touch-none"
-        dpr={Math.min(window.devicePixelRatio, 2)}
+        dpr={1}
         shadows
         camera={{
           zoom: 25,
