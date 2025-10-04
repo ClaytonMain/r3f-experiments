@@ -1,28 +1,13 @@
-import {
-  OrthographicCamera,
-  Plane,
-  RenderTexture,
-  Text,
-  useFBO,
-} from "@react-three/drei";
+import { Plane, Text, useFBO } from "@react-three/drei";
 import { createPortal, useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 const fontUrl = "./fonts/Roboto_Mono/static/RobotoMono-Regular.ttf";
+const fontName = "roboto_mono";
 const characters = "0123456789:";
 
-function CharacterDisplay() {
-  const characterIndexRef = useRef(0);
-  const [character, setCharacter] = useState(characters[0]);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newIndex = (characterIndexRef.current + 1) % characters.length;
-      setCharacter(characters.charAt(newIndex));
-      characterIndexRef.current = newIndex;
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+function CharacterDisplay({ character }: { character: string }) {
   return (
     <Text
       position={[0, 0.35, 0]}
@@ -38,14 +23,15 @@ function CharacterDisplay() {
 }
 
 export default function CharacterGridGenerator() {
-  const size = 32;
-  const planeRef01 = useRef<THREE.Mesh>(null!);
-  const planeRef02 = useRef<THREE.Mesh>(null!);
+  const currentCharacterIndex = useRef(0);
+  const saved = useRef(false);
 
-  const characterIndexRef = useRef(0);
   const [character, setCharacter] = useState(characters[0]);
-
-  const readRenderTargetPixelsFlag = useRef(false);
+  const [characterData, setCharacterData] = useState<Record<string, number[]>>(
+    {},
+  );
+  const size = 32;
+  const planeRef = useRef<THREE.Mesh>(null!);
 
   const characterDisplayScene = useMemo(() => new THREE.Scene(), []);
   const characterDisplayCamera = useMemo(() => {
@@ -59,23 +45,17 @@ export default function CharacterGridGenerator() {
     stencilBuffer: false,
     depthBuffer: false,
     type: THREE.UnsignedByteType,
+    format: THREE.RedFormat,
   });
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const newIndex = (characterIndexRef.current + 1) % characters.length;
-      setCharacter(characters.charAt(newIndex));
-      characterIndexRef.current = newIndex;
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const pixelBuffer = new Uint8Array(size * size * 4);
+  const pixelBuffer = new Uint8Array(size * size);
 
   useFrame(({ gl }) => {
     gl.setRenderTarget(characterDisplayRenderTarget);
     gl.render(characterDisplayScene, characterDisplayCamera);
-    if (readRenderTargetPixelsFlag.current) {
+    if (currentCharacterIndex.current < characters.length) {
+      const currentCharacter = characters[currentCharacterIndex.current];
+      setCharacter(currentCharacter);
       gl.readRenderTargetPixels(
         characterDisplayRenderTarget,
         0,
@@ -84,71 +64,41 @@ export default function CharacterGridGenerator() {
         size,
         pixelBuffer,
       );
-      // For debugging purposes, log the pixel buffer to see the RGBA values.
-      console.log("Pixel Buffer:", pixelBuffer);
-      readRenderTargetPixelsFlag.current = false;
+      setCharacterData((prev) => ({
+        ...prev,
+        [currentCharacter]: Array.from(pixelBuffer),
+      }));
+      currentCharacterIndex.current += 1;
+    } else if (!saved.current) {
+      saved.current = true;
+      const blob = new Blob([JSON.stringify({ [size]: characterData })], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `character_data_${fontName}_${size}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      console.log("Character data saved:", characterData);
     }
     gl.setRenderTarget(null);
 
-    if (planeRef02.current) {
+    if (planeRef.current) {
       // @ts-expect-error "map" does exist.
-      planeRef02.current.material.map = characterDisplayRenderTarget.texture;
+      planeRef.current.material.map = characterDisplayRenderTarget.texture;
     }
   });
 
   return (
     <>
-      <Plane
-        position={[0, -5, 0]}
-        ref={planeRef01}
-        args={[8, 8]}
-        onClick={() => {
-          console.log(planeRef01.current.material);
-        }}
-      >
-        <meshBasicMaterial>
-          <RenderTexture
-            width={32}
-            height={32}
-            attach="map"
-            magFilter={THREE.NearestFilter}
-            minFilter={THREE.NearestFilter}
-          >
-            <OrthographicCamera
-              makeDefault
-              left={-4}
-              right={4}
-              top={4}
-              bottom={-4}
-              near={0.1}
-              far={20}
-              position={[0, 0, 10]}
-            />
-
-            <Text
-              position={[0, 0.35, 0]}
-              font={fontUrl}
-              color={"white"}
-              fontSize={10}
-              anchorX="center"
-              anchorY="middle"
-            >
-              {character}
-            </Text>
-          </RenderTexture>
-        </meshBasicMaterial>
-      </Plane>
-      <Plane
-        position={[0, 5, 0]}
-        ref={planeRef02}
-        args={[8, 8]}
-        onClick={() => {
-          readRenderTargetPixelsFlag.current = true;
-        }}
-      >
+      <Plane position={[0, 0, 0]} ref={planeRef} args={[8, 8]}>
         <meshBasicMaterial />
       </Plane>
-      {createPortal(<CharacterDisplay />, characterDisplayScene)}
+      {createPortal(
+        <CharacterDisplay character={character} />,
+        characterDisplayScene,
+      )}
     </>
   );
 }
