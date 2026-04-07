@@ -92,10 +92,10 @@ export const ATTRACTOR_CONFIGS: AttractorConfigs = {
 export const DEFAULT_ATTRACTOR_PARAMS: AttractorParams = {
   attractorName: "lorenz83",
   speedScale: 1.0,
-  decayFactor: 0.1,
-  noiseScale: 1.0,
+  decayFactor: 0.21,
+  noiseScale: 0.2,
   noiseTimeScale: 1.0,
-  noiseIntensity: 0.01,
+  noiseIntensity: 0.38,
 };
 
 // WARNING: Do not reorder these values.
@@ -111,12 +111,12 @@ export const COLOR_MODES: Array<ColorMode> = [
 ];
 
 export const DEFAULT_STYLE_PARAMS: StyleParams = {
-  colorMode: "rainbow",
+  colorMode: "double",
   color1: "#aa4f34",
   color2: "#90107b",
   color3: "#4c81de",
-  blendCenter: 0.5,
-  blendScale: 0.5,
+  blendCenter: 0.27,
+  blendScale: 0.43,
   blendSharpness: 0.5,
   colorTimeScale: 0.3,
   positionRandomization: 0.0,
