@@ -140,6 +140,9 @@ export default function Footer({
             <option value="menger_sponge">Menger Sponge</option>
             <option value="slime_mold">Slime Mold</option>
             <option value="halftone_game_of_life">Halftone Game of Life</option>
+            <option value="character_grid_generator">
+              Character Grid Generator
+            </option>
           </select>
         </form>
         {information && (
