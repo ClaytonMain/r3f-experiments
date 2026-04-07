@@ -59,7 +59,7 @@ export default function AttractorScene() {
   const { autoRotate, autoRotateSpeed } = useControls("Camera", {
     autoRotate: true,
     autoRotateSpeed: {
-      value: 0.5,
+      value: 0.7,
       min: -5,
       max: 5,
       step: 0.1,
