@@ -1,7 +1,6 @@
 import { Route, Routes } from "react-router";
 import "./App.css";
 import AttractorScene from "./scenes/attractor/AttractorScene";
-import CharacterGridGeneratorScene from "./scenes/character_grid_generator/CharacterGridGeneratorScene";
 import GPUFlowFieldInstancedMeshScene from "./scenes/gpu_flow_field_instanced_mesh/GPUFlowFieldInstancedMeshScene";
 import HalftoneGameOfLifeScene from "./scenes/halftone_game_of_life/HalftoneGameOfLifeScene";
 import InfinityMirrorScene from "./scenes/infinity_mirror/InfinityMirrorScene";
@@ -39,11 +38,7 @@ function App() {
         path="/halftone_game_of_life"
         element={<HalftoneGameOfLifeScene />}
       />
-      <Route
-        path="/character_grid_generator"
-        element={<CharacterGridGeneratorScene />}
-      />
-      <Route path="*" element={<CharacterGridGeneratorScene />} />
+      <Route path="*" element={<AttractorScene />} />
     </Routes>
   );
 }
